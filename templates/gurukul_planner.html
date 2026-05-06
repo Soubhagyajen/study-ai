@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<!-- Layout Planner -->
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Study Planner - Gurukul</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600&family=DM+Sans:wght@400;700&family=EB+Garamond:wght@400;600&display=swap" rel="stylesheet">
+    <script>tailwind.config = { theme: { extend: { colors: { background: '#0a0804', primary: '#c9963a', accent: '#e8732a', text: '#f0ddb0', success: '#2d7a4f', danger: '#c0392b' }, fontFamily: { cinzel: ['Cinzel', 'serif'], garamond: ['EB Garamond', 'serif'], sans: ['DM Sans', 'sans-serif']} } } }</script>
+    <style>body { background-color: #0a0804; color: #f0ddb0; } .glass { background: rgba(10, 8, 4, 0.4); backdrop-filter: blur(16px); border: 1px solid rgba(201, 150, 58, 0.15); box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37); }</style>
+</head>
+<body class="font-sans min-h-screen flex text-text overflow-x-hidden flex-col md:flex-row">
+    <!-- Mobile Topbar -->
+    <div class="md:hidden flex items-center justify-between p-4 glass sticky top-0 z-[60] shadow-md border-b border-primary/20 bg-[#0a0804]">
+        <h1 class="font-cinzel text-2xl font-bold text-primary tracking-widest drop-shadow-primary">GURUKUL</h1>
+        <button onclick="document.getElementById('mobile-menu').classList.toggle('-translate-x-full')" class="text-primary hover:text-white transition-colors">
+            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+        </button>
+    </div>
+
+        <aside id="mobile-menu" class="w-64 glass border-r border-t-0 border-b-0 border-l-0 flex flex-col fixed md:sticky top-0 left-0 h-screen z-[100] transform -translate-x-full md:translate-x-0 transition-transform duration-300 bg-[#0a0804] md:bg-transparent shadow-[4px_0_24px_rgba(0,0,0,0.8)] md:shadow-none">
+        <!-- Close Button (Mobile Only) -->
+        <button onclick="document.getElementById('mobile-menu').classList.add('-translate-x-full')" class="md:hidden absolute top-3 md:p-6 right-6 text-text/50 hover:text-danger z-50">
+            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+        </button>
+        <div class="p-4 md:p-8"><h1 class="font-cinzel text-lg md:text-3xl font-bold text-primary">GURUKUL</h1></div>
+        <nav class="flex-1 px-4 text-sm space-y-3 mt-4">
+            <a href="gurukul_dashboard.html" class="flex p-3 rounded-lg opacity-70 border-l-2 border-transparent hover:opacity-100">Dashboard</a>
+            <a href="gurukul_vishay.html" class="flex p-3 rounded-lg opacity-70 border-l-2 border-transparent hover:opacity-100">Vishay</a>
+            <a href="gurukul_pariksha.html" class="flex p-3 rounded-lg opacity-70 border-l-2 border-transparent hover:opacity-100">Pariksha</a>
+            <a href="#" class="flex p-3 rounded-lg bg-primary/20 text-primary font-bold border-l-2 border-primary">Study Planner</a>
+        </nav>
+        <div class="p-3 md:p-6"><a href="gurukul_ashram.html" class="flex items-center gap-3 px-4 py-3 rounded-lg text-text/70 hover:text-primary hover:bg-primary/10 transition-all font-medium border border-text/10">Ashram</a></div>
+    </aside>
+
+    <main class="flex-1 px-4 md:px-8 py-6 md:py-8 w-full relative">
+        <header class="mb-5 md:mb-10pb-6 flex justify-between">
+            <div>
+                <h2 class="font-cinzel text-xl md:text-4xl font-bold tracking-wide">AI Generative Planner</h2>
+                <p class="font-garamond text-primary/80 text-xl mt-2 italic shadow-md">Dynamic Aaj Ka Adhyayan</p>
+            </div>
+            <button class="bg-primary text-black font-bold px-6 rounded hover:bg-white" onclick="generateAIPlan()">Generate Routine</button>
+        </header>
+
+        <div id="planner-board" class="grid max-w-full grid-cols-1 lg:grid-cols-2 gap-4 md:gap-4 md:p-8 gap-4 md:p-8 mt-10">
+            <!-- AI Output container -->
+        </div>
+    </main>
+
+    <script src="/static/js/gurukul_api.js"></script>
+    <script>
+        async function generateAIPlan() {
+            const board = document.getElementById('planner-board');
+            board.innerHTML = '<div class="col-span-fulltext-center text-primary text-2xl font-cinzel">Algorithm compiling Adhyayan logics...</div>';
+
+            try {
+                const token = getToken();
+                const res = await gurukulFetch('http://127.0.0.1:8000/api/ai/generate-plan/', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (!res.ok) throw new Error("Offline");
+                const data = await res.json();
+                
+                board.innerHTML = `
+                    <div class="glass max-w-full break-words p-4 md:p-8 rounded-2xl border-l-4 border-l-accent flex flex-col justify-center">
+                        <span class="text-5xl mb-4 filter drop-shadow animate-pulse">✨</span>
+                        <h3 class="font-cinzel text-xl text-primary font-bold mb-2">Gemini's Insight</h3>
+                        <blockquote class="border-l-2 border-text/30 pl-4 font-garamond italic text-text/80 text-xl text-primary tracking-widest mt-4">
+                            "${data.quote || "The obstacle is the path."}"
+                        </blockquote>
+                    </div>
+                    
+                    <div class="glass max-w-full break-words p-4 md:p-8 rounded-2xl border-t border-primary/30">
+                        <h3 class="font-cinzel text-xl text-primary font-bold mb-3 md:mb-6 flex flex-wrap justify-between gap-4">
+                            Smart Plan Sequence
+                            <button onclick="startSession()" class="text-xs bg-accent text-black px-2 py-1 rounded">START ADHYAYAN TIMER</button>
+                        </h3>
+                        <div class="space-y-4">
+                            ${(data.tasks || []).map((p, i) => `
+                                <div class="p-4 bg-black/40 rounded-lg border border-white/5 flex gap-4 items-center flex-wrap">
+                                    <span class="font-cinzel text-2xl text-primary/40">0${i+1}</span>
+                                    <div>
+                                        <h4 class="font-bold text-white break-words">${p.task || p.subject || 'Focus Block'}</h4>
+                                        <p class="text-xs text-text/60 mt-1">${p.category || 'Study'} | ${p.estimated_minutes || p.duration || 45} Mins</p>
+                                    </div>
+                                    <span class="ml-auto text-xs px-2 py-1 bg-black rounded font-bold ${p.priority === 'High' ? 'text-danger border border-danger/50' : 'text-primary border border-primary/50'}">${p.priority || 'Medium'}</span>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            } catch(e) {
+                board.innerHTML = `<div class="glass max-w-full break-words p-3 md:p-6 text-danger col-span-full">Requires DRF backend '/api/ai-planner/'. Connect Django!</div>`;
+            }
+        }
+
+        let timerInterval = null;
+        let sessionSeconds = 0;
+        async function startSession() {
+            const btn = document.querySelector('button[onclick="startSession()"]');
+            if(timerInterval) {
+                // Stop Timer
+                clearInterval(timerInterval);
+                timerInterval = null;
+                const durationMinutes = Math.max(1, Math.floor(sessionSeconds/60));
+                btn.innerText = `COMPLETED (${durationMinutes}m ${sessionSeconds%60}s) Logging...`;
+                btn.classList.remove('bg-accent', 'animate-pulse');
+                btn.classList.add('bg-success', 'text-white');
+                
+                // ACTUAL POST /api/study-sessions/
+                try {
+                    const token = getToken();
+                    const subRes = await gurukulFetch('http://127.0.0.1:8000/api/subjects/', { headers: { 'Authorization': `Bearer ${token}` } });
+                    const subjects = await subRes.json();
+                    if(subjects.length > 0) {
+                        const postRes = await gurukulFetch('http://127.0.0.1:8000/api/study-sessions/', {
+                            method: 'POST',
+                            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                subject: subjects[0].id,
+                                duration_minutes: durationMinutes,
+                                is_completed: true,
+                                start_time: new Date().toISOString()
+                            })
+                        });
+                        if(postRes.ok) btn.innerText = `SAVED TO DB +25XP`;
+                    }
+                } catch(e) { btn.innerText = "Error Saving"; }
+            } else {
+                // Start Timer
+                sessionSeconds = 0;
+                btn.classList.add('animate-pulse');
+                timerInterval = setInterval(() => {
+                    sessionSeconds++;
+                    const m = Math.floor(sessionSeconds / 60);
+                    const s = sessionSeconds % 60;
+                    btn.innerText = `FOCUS: ${m}:${s < 10 ? '0'+s : s} - CLICK TO FINISH`;
+                }, 1000);
+            }
+        }
+        document.addEventListener('DOMContentLoaded', generateAIPlan);
+    </script>
+</body>
+</html>

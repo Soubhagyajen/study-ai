@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<!-- Layout Ashram -->
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ashram - Gurukul AI</title>
+    <script src="/static/js/gurukul_api.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600&family=DM+Sans:wght@400;700&family=EB+Garamond:wght@400;600&display=swap"
+        rel="stylesheet">
+    <script>tailwind.config = { theme: { extend: { colors: { background: '#0a0804', primary: '#c9963a', accent: '#e8732a', text: '#f0ddb0', success: '#2d7a4f', danger: '#c0392b' }, fontFamily: { cinzel: ['Cinzel', 'serif'], garamond: ['EB Garamond', 'serif'], sans: ['DM Sans', 'sans-serif'] } } } }</script>
+    <!-- Firebase Web SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+    <style>
+        body {
+            background-color: #0a0804;
+            color: #f0ddb0;
+        }
+
+        .glass {
+            background: rgba(10, 8, 4, 0.4);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(201, 150, 58, 0.15);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        }
+    </style>
+</head>
+
+<body
+    class="font-sans min-h-screen flex text-text items-center justify-center p-4 md:p-8 bg-[url('https://www.transparenttextures.com/patterns/black-linen.png')] relative">
+    <!-- Mobile Topbar -->
+    <div class="md:hidden flex items-center justify-between p-4 glass sticky top-0 z-[60] shadow-md border-b border-primary/20 bg-[#0a0804]">
+        <h1 class="font-cinzel text-2xl font-bold text-primary tracking-widest drop-shadow-primary">GURUKUL</h1>
+        <button onclick="document.getElementById('mobile-menu').classList.toggle('-translate-x-full')" class="text-primary hover:text-white transition-colors">
+            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+        </button>
+    </div>
+
+
+    <a href="gurukul_dashboard.html"
+        class="absolute top-4 md:p-8 left-8 flex items-center gap-2 text-primary hover:text-white transition-colors">
+        ← Back to Dashboard
+    </a>
+
+    <div class="glass max-w-full break-words w-full max-w-md w-[90%] md:w-full rounded-2xl p-3 md:p-6 md:p-10 relative overflow-hidden" id="ashram-container">
+        <div class="absolute top-0 right-0 w-32 h-32 bg-primary/20 rounded-full blur-3xl -mr-10 -mt-10 pointer-events-none"></div>
+
+        <!-- AUTHENTICATED VIEW (hidden by default) -->
+        <div id="profileView" class="hidden">
+            <h2 class="font-cinzel text-lg md:text-3xl font-bold text-primary mb-2 text-center">Shishya Profile</h2>
+            <p class="text-center font-garamond italic text-text/60 mb-3 md:mb-6 border-b border-primary/20 pb-4">Your current Sadhana metrics</p>
+            
+            <div class="space-y-4 font-sans text-center">
+                <div>
+                    <p class="text-xs uppercase tracking-widest text-text/50">Email</p>
+                    <p class="text-lg font-bold" id="prof-email">...</p>
+                </div>
+                <div class="flex justify-around mt-4 pt-4 border-t border-primary/10">
+                    <div>
+                        <p class="text-[10px] uppercase tracking-widest text-text/50">Level</p>
+                        <p class="text-lg md:text-3xl font-cinzel text-primary drop-shadow-md" id="prof-level">0</p>
+                    </div>
+                    <div>
+                        <p class="text-[10px] uppercase tracking-widest text-text/50">Total XP</p>
+                        <p class="text-lg md:text-3xl font-cinzel text-accent drop-shadow-md" id="prof-xp">0</p>
+                    </div>
+                </div>
+            </div>
+
+            <button onclick="logout()" class="mt-8 w-full bg-danger/20 hover:bg-danger text-danger hover:text-white border border-danger/50 hover:border-danger font-bold uppercase tracking-widest py-2 rounded transition-all">
+                Log Out
+            </button>
+        </div>
+
+        <!-- LOGIN VIEW (visible by default) -->
+        <div id="loginView">
+            <h2 class="font-cinzel text-lg md:text-3xl font-bold text-primary mb-2 text-center">Ashram Entry</h2>
+            <p class="text-center font-garamond italic text-text/60 mb-4 md:mb-8 border-b border-primary/20 pb-4">JWT API Authorization Gateway</p>
+
+            <form id="loginForm" class="space-y-6" onsubmit="event.preventDefault(); authCall();">
+                <div>
+                    <label class="block text-xs uppercase tracking-widest text-text/70 mb-2 font-bold">Email Address</label>
+                    <input type="email" id="email" class="w-full bg-black/50 border border-primary/30 rounded py-3 px-4 text-white focus:border-primary outline-none focus:ring-1 focus:ring-primary transition-all" value="shishya@gurukul.ai" required>
+                </div>
+
+                <div>
+                    <label class="block text-xs uppercase tracking-widest text-text/70 mb-2 font-bold">Password</label>
+                    <input type="password" id="pw" class="w-full bg-black/50 border border-primary/30 rounded py-3 px-4 text-white focus:border-primary outline-none" value="password123" required>
+                </div>
+
+                <button type="submit" class="w-full bg-gradient-to-r from-primary to-accent hover:to-primary text-black font-bold uppercase tracking-widest py-3 rounded shadow-[0_0_20px_rgba(201,150,58,0.4)] transition-all transform hover:scale-[1.02]">
+                    Initiate Sadhana (Login)
+                </button>
+                <p id="msg" class="text-center text-xs mt-4"></p>
+            </form>
+
+            <!-- Divider -->
+            <div class="flex items-center gap-4 my-6">
+                <div class="flex-1 h-px bg-primary/20"></div>
+                <span class="text-xs uppercase tracking-widest text-text/40 font-bold">or</span>
+                <div class="flex-1 h-px bg-primary/20"></div>
+            </div>
+
+            <!-- Google Sign-In Button -->
+            <button onclick="loginWithGoogle()" id="google-btn" class="w-full flex items-center justify-center gap-3 bg-white/10 hover:bg-white/20 border border-white/20 hover:border-white/40 text-white font-bold py-3 rounded transition-all transform hover:scale-[1.02]">
+                <svg class="w-5 h-5" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+                Continue with Google
+            </button>
+        </div>
+    </div>
+
+    <script src='/static/js/gurukul_api.js'></script>
+    <!-- API INTEGRATION SCRIPT -->
+    <script>
+        // ─── Firebase Web Config ─────────────────────────────────
+        // Replace these values with YOUR Firebase project config
+        const firebaseConfig = {
+            apiKey: "AIzaSyCnpHDKzzuY3kNkuLvE2hChI1y_CFarYPk",
+            authDomain: "gurukul-c44d0.firebaseapp.com",
+            projectId: "gurukul-c44d0",
+            storageBucket: "gurukul-c44d0.firebasestorage.app",
+            messagingSenderId: "882393996871",
+            appId: "1:882393996871:web:1299f09462cd6488bc1b62",
+            measurementId: "G-E3VWVE510C"
+        };
+        firebase.initializeApp(firebaseConfig);
+
+        // ─── Page Load: Check Auth State ─────────────────────────
+        document.addEventListener('DOMContentLoaded', async () => {
+            const token = getToken();
+            if(token) {
+                document.getElementById('loginView').style.display = 'none';
+                document.getElementById('profileView').style.display = 'block';
+                loadProfileStats();
+            }
+        });
+
+        // ─── Profile Loader ──────────────────────────────────────
+        async function loadProfileStats() {
+            try {
+                const res = await gurukulFetch('http://127.0.0.1:8000/api/ashram/');
+                if (res.ok) {
+                    const data = await res.json();
+                    document.getElementById('prof-email').innerText = data.email;
+                    if(data.profile) {
+                        document.getElementById('prof-level').innerText = data.profile.level;
+                        document.getElementById('prof-xp').innerText = data.profile.total_xp;
+                    }
+                }
+            } catch(e) { console.error('Failed fetching profile', e); }
+        }
+
+        // ─── Logout ──────────────────────────────────────────────
+        function logout() {
+            localStorage.removeItem('access_token');
+            localStorage.removeItem('refresh_token');
+            // Also sign out of Firebase if active
+            if (firebase.auth().currentUser) firebase.auth().signOut();
+            window.location.reload();
+        }
+
+        // ─── Email/Password Login (existing) ─────────────────────
+        async function authCall() {
+            const m = document.getElementById('msg');
+            m.className = "text-center text-xs mt-4 text-primary animate-pulse";
+            m.innerText = "Interfacing with Custom JWT Payload Generator...";
+
+            try {
+                const res = await gurukulFetch('http://127.0.0.1:8000/api/auth/login/', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        email: document.getElementById('email').value,
+                        password: document.getElementById('pw').value
+                    })
+                });
+
+                if (res.ok) {
+                    const data = await res.json();
+                    localStorage.setItem('access_token', data.access);
+                    localStorage.setItem('refresh_token', data.refresh);
+
+                    m.className = "text-center text-xs mt-4 text-success";
+                    m.innerText = "Authorized! Welcome. Redirecting...";
+                    setTimeout(() => window.location.href = 'gurukul_dashboard.html', 1500);
+                } else {
+                    m.className = "text-center text-xs mt-4 text-danger font-bold";
+                    m.innerText = "Invalid credentials. Ensure user is created in DRF.";
+                }
+            } catch (e) {
+                m.className = "text-center text-[10px] mt-4 text-danger font-bold uppercase tracking-widest";
+                m.innerText = "Connection Failed. Is `python manage.py runserver` running?";
+            }
+        }
+
+        // ─── Google Sign-In (Firebase → Django JWT) ──────────────
+        async function loginWithGoogle() {
+            const m = document.getElementById('msg');
+            const btn = document.getElementById('google-btn');
+            btn.disabled = true;
+            btn.classList.add('opacity-50');
+            m.className = "text-center text-xs mt-4 text-primary animate-pulse";
+            m.innerText = "Opening Google Sign-In...";
+
+            try {
+                const provider = new firebase.auth.GoogleAuthProvider();
+                const result = await firebase.auth().signInWithPopup(provider);
+                const idToken = await result.user.getIdToken();
+
+                console.log("API CALL: POST /api/auth/firebase-login/");
+                m.innerText = "Verifying with Gurukul backend...";
+
+                // Send Firebase token to Django for JWT exchange
+                const res = await fetch('http://127.0.0.1:8000/api/auth/firebase-login/', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id_token: idToken })
+                });
+
+                if (res.ok) {
+                    const data = await res.json();
+                    localStorage.setItem('access_token', data.access);
+                    localStorage.setItem('refresh_token', data.refresh);
+
+                    m.className = "text-center text-xs mt-4 text-success font-bold";
+                    m.innerText = data.created
+                        ? `Welcome aboard, ${data.email}! Redirecting...`
+                        : `Welcome back, ${data.email}! Redirecting...`;
+                    setTimeout(() => window.location.href = 'gurukul_dashboard.html', 1500);
+                } else {
+                    const err = await res.json();
+                    m.className = "text-center text-xs mt-4 text-danger font-bold";
+                    m.innerText = err.error || "Backend rejected Firebase token.";
+                }
+            } catch (e) {
+                console.error('Google Sign-In Error:', e);
+                m.className = "text-center text-xs mt-4 text-danger font-bold";
+                m.innerText = e.code === 'auth/popup-closed-by-user'
+                    ? 'Sign-in popup closed.'
+                    : `Google Sign-In failed: ${e.message}`;
+            } finally {
+                btn.disabled = false;
+                btn.classList.remove('opacity-50');
+            }
+        }
+    </script>
+</body>
+
+</html>

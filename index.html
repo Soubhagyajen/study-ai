@@ -1,0 +1,1812 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StudyAI - AI Study Planner</title>
+    <meta name="description" content="StudyAI is an AI-powered study planner built for Indian college students. Plan subjects, track exams, and boost productivity.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Sora:wght@400;600;700&display=swap" rel="stylesheet">
+    
+<!--
+DJANGO MODELS NEEDED (models.py):
+
+class UserProfile(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    college_name = models.CharField(max_length=200)
+    semester = models.IntegerField()
+    branch = models.CharField(max_length=100)
+
+class Subject(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    subject_name = models.CharField(max_length=200)
+    total_topics = models.IntegerField()
+
+class Topic(models.Model):
+    subject = models.ForeignKey(Subject, on_delete=models.CASCADE)
+    topic_name = models.CharField(max_length=200)
+    is_completed = models.BooleanField(default=False)
+
+class Exam(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    subject = models.ForeignKey(Subject, on_delete=models.CASCADE)
+    exam_name = models.CharField(max_length=200)
+    exam_date = models.DateField()
+
+class StudySession(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    subject = models.ForeignKey(Subject, on_delete=models.CASCADE)
+    date = models.DateField()
+    planned_hours = models.FloatField()
+    completed_hours = models.FloatField(default=0)
+    notes = models.TextField(blank=True)
+-->
+
+    <style>
+        :root {
+            --bg-color: #0A0A1A;
+            --sidebar-bg: #0F0F23;
+            --card-bg: #1E1E2E;
+            --card-border: #2D2D4E;
+            --primary-blue: #3B82F6;
+            --primary-glow: rgba(59, 130, 246, 0.5);
+            --secondary-purple: #8B5CF6;
+            --success-green: #22C55E;
+            --warning-amber: #F59E0B;
+            --danger-red: #EF4444;
+            --text-white: #FFFFFF;
+            --text-gray: #94A3B8;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'DM Sans', sans-serif;
+        }
+
+        h1, h2, h3, h4, h5, h6 {
+            font-family: 'Sora', sans-serif;
+            color: var(--text-white);
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-gray);
+            min-height: 100vh;
+            overflow-x: hidden;
+            display: flex;
+        }
+
+        .screen {
+            display: none;
+            width: 100%;
+            min-height: 100vh;
+            animation: fadeIn 0.3s ease-in-out;
+        }
+        
+        .screen.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        /* Forms & Inputs */
+        input, select, textarea {
+            width: 100%;
+            padding: 12px 16px;
+            margin-bottom: 16px;
+            background-color: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--card-border);
+            border-radius: 8px;
+            color: var(--text-white);
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.3s, box-shadow 0.3s;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            border-color: var(--primary-blue);
+            box-shadow: 0 0 0 2px var(--primary-glow);
+        }
+
+        /* Buttons */
+        .btn {
+            padding: 12px 24px;
+            border-radius: 8px;
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-align: center;
+            display: inline-block;
+            width: 100%;
+            font-family: 'DM Sans', sans-serif;
+        }
+
+        .btn-primary {
+            background-color: var(--primary-blue);
+            color: white;
+            box-shadow: 0 4px 15px var(--primary-glow);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px var(--primary-glow);
+        }
+
+        .btn-google {
+            background-color: white;
+            color: #333;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .btn-google:hover {
+            background-color: #f1f1f1;
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 1px solid var(--primary-blue);
+            color: var(--primary-blue);
+        }
+
+        .btn-outline:hover {
+            background: rgba(59, 130, 246, 0.1);
+        }
+
+        /* Cards */
+        .card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
+            padding: 24px;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            border-color: rgba(59, 130, 246, 0.3);
+        }
+
+        /* Layout Structure */
+        .auth-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            width: 100%;
+            padding: 20px;
+        }
+
+        .auth-box {
+            background-color: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
+            padding: 40px;
+            width: 100%;
+            max-width: 400px;
+        }
+
+        .logo {
+            font-family: 'Sora', sans-serif;
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--text-white);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 30px;
+            justify-content: center;
+        }
+
+        .logo span {
+            color: var(--primary-blue);
+        }
+
+        /* Sidebar & Main Content */
+        .app-layout {
+            display: flex;
+            width: 100%;
+        }
+
+        .sidebar {
+            width: 250px;
+            background-color: var(--sidebar-bg);
+            border-right: 1px solid var(--card-border);
+            height: 100vh;
+            position: fixed;
+            left: 0;
+            top: 0;
+            padding: 20px 0;
+            display: flex;
+            flex-direction: column;
+            z-index: 10;
+        }
+
+        .nav-item {
+            padding: 15px 20px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            color: var(--text-gray);
+            text-decoration: none;
+            transition: all 0.3s;
+            cursor: pointer;
+            border-left: 3px solid transparent;
+        }
+
+        .nav-item:hover {
+            background-color: rgba(59, 130, 246, 0.05);
+            color: var(--text-white);
+        }
+
+        .nav-item.active {
+            border-left-color: var(--primary-blue);
+            background-color: rgba(59, 130, 246, 0.1);
+            color: var(--primary-blue);
+            font-weight: 500;
+        }
+
+        .main-content {
+            flex: 1;
+            margin-left: 250px;
+            padding: 30px;
+        }
+
+        /* Top Navbar */
+        .top-nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid var(--card-border);
+        }
+
+        .user-profile {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary-blue), var(--secondary-purple));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 700;
+        }
+
+        /* Dashboard Grid */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(12, 1fr);
+            gap: 20px;
+        }
+
+        .col-8 { grid-column: span 8; }
+        .col-4 { grid-column: span 4; }
+        .col-6 { grid-column: span 6; }
+        .col-3 { grid-column: span 3; }
+
+        /* Specific Components */
+        .divider {
+            display: flex;
+            align-items: center;
+            text-align: center;
+            margin: 20px 0;
+            color: var(--text-gray);
+            font-size: 14px;
+        }
+
+        .divider::before, .divider::after {
+            content: '';
+            flex: 1;
+            border-bottom: 1px solid var(--card-border);
+        }
+
+        .divider::before { margin-right: .25em; }
+        .divider::after { margin-left: .25em; }
+
+        .progress-bar-bg {
+            background-color: rgba(255, 255, 255, 0.1);
+            height: 8px;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 10px;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary-blue), var(--secondary-purple));
+            border-radius: 4px;
+            transition: width 1s ease-in-out;
+        }
+
+        /* Charts - Pure CSS */
+        .bar-chart {
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-between;
+            height: 200px;
+            margin-top: 20px;
+            padding-top: 20px;
+        }
+
+        .bar-col {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            flex: 1;
+        }
+
+        .bar-container {
+            height: 150px;
+            width: 100%;
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+        }
+
+        .bar {
+            width: 30%;
+            background-color: var(--primary-blue);
+            border-radius: 4px 4px 0 0;
+            transition: height 0.5s;
+        }
+
+        .bar.planned {
+            background-color: rgba(59, 130, 246, 0.3);
+            margin-right: 2px;
+        }
+
+        /* Calendar */
+        .calendar {
+            background-color: var(--card-bg);
+            border-radius: 16px;
+            padding: 20px;
+            border: 1px solid var(--card-border);
+        }
+        
+        .calendar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 5px;
+            text-align: center;
+        }
+
+        .calendar-day-name {
+            font-weight: 500;
+            color: var(--text-gray);
+            padding-bottom: 10px;
+        }
+
+        .calendar-day {
+            aspect-ratio: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+        }
+
+        .calendar-day:hover {
+            background-color: rgba(59, 130, 246, 0.1);
+        }
+
+        .calendar-day.has-session::after {
+            content: '';
+            position: absolute;
+            bottom: 5px;
+            width: 6px;
+            height: 6px;
+            background-color: var(--primary-blue);
+            border-radius: 50%;
+        }
+
+        .calendar-day.active {
+            background-color: var(--primary-blue);
+            color: white;
+        }
+
+        /* Subject Grid Container */
+        .subjects-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        /* Circular Progress */
+        .circular-progress {
+            position: relative;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: conic-gradient(var(--primary-blue) 0%, rgba(255,255,255,0.1) 0%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .circular-progress::before {
+            content: "";
+            position: absolute;
+            inset: 6px;
+            border-radius: 50%;
+            background-color: var(--card-bg);
+        }
+
+        .progress-value {
+            position: relative;
+            font-size: 14px;
+            font-weight: 600;
+            color: white;
+        }
+
+        /* Syllabus Layout */
+        .syllabus-item {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 12px 0;
+            border-bottom: 1px solid var(--card-border);
+        }
+
+        .custom-checkbox {
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border: 2px solid var(--primary-blue);
+            border-radius: 4px;
+            outline: none;
+            cursor: pointer;
+            position: relative;
+            background-color: transparent;
+            transition: all 0.2s;
+        }
+
+        .custom-checkbox:checked {
+            background-color: var(--primary-blue);
+        }
+
+        .custom-checkbox:checked::after {
+            content: '✓';
+            position: absolute;
+            color: white;
+            font-size: 14px;
+            top: -2px;
+            left: 3px;
+        }
+
+        .floating-btn {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background-color: var(--primary-blue);
+            color: white;
+            font-size: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 15px var(--primary-glow);
+            cursor: pointer;
+            z-index: 100;
+            border: none;
+            transition: transform 0.3s;
+        }
+
+        .floating-btn:hover {
+            transform: scale(1.1) rotate(90deg);
+        }
+
+        .badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .badge-red { background-color: rgba(239, 68, 68, 0.2); color: var(--danger-red); }
+        .badge-amber { background-color: rgba(245, 158, 11, 0.2); color: var(--warning-amber); }
+        .badge-green { background-color: rgba(34, 197, 94, 0.2); color: var(--success-green); }
+
+        .timeline {
+            border-left: 2px solid var(--card-border);
+            margin-left: 10px;
+            padding-left: 20px;
+            position: relative;
+        }
+
+        .timeline-item {
+            margin-bottom: 25px;
+            position: relative;
+        }
+
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: -27px;
+            top: 5px;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background-color: var(--primary-blue);
+            box-shadow: 0 0 10px var(--primary-blue);
+        }
+
+        .error-msg {
+            color: var(--danger-red);
+            font-size: 12px;
+            margin-top: -10px;
+            margin-bottom: 10px;
+            display: none;
+        }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(5px);
+            z-index: 1000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background-color: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
+            padding: 30px;
+            width: 100%;
+            max-width: 500px;
+            position: relative;
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 100%;
+                height: 70px;
+                top: auto;
+                bottom: 0;
+                flex-direction: row;
+                justify-content: space-around;
+                padding: 0;
+                border-right: none;
+                border-top: 1px solid var(--card-border);
+            }
+            .nav-item {
+                flex-direction: column;
+                padding: 10px;
+                border-left: none;
+                border-bottom: 3px solid transparent;
+                font-size: 12px;
+            }
+            .nav-item.active {
+                border-left-color: transparent;
+                border-bottom-color: var(--primary-blue);
+            }
+            .nav-item span { display: none; }
+            .main-content {
+                margin-left: 0;
+                margin-bottom: 70px;
+                padding: 15px;
+            }
+            .col-8, .col-4, .col-6, .col-3 {
+                grid-column: span 12;
+            }
+            .quick-actions-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            .subjects-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Quick Actions */
+        .quick-actions-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+        }
+        .quick-action-btn {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+            padding: 20px 15px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+            color: var(--text-gray);
+            font-family: 'DM Sans', sans-serif;
+            font-size: 14px;
+        }
+        .quick-action-btn:hover {
+            background: rgba(59,130,246,0.1);
+            border-color: var(--primary-blue);
+            color: var(--text-white);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(59,130,246,0.2);
+        }
+        .quick-action-icon { font-size: 28px; }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: var(--card-bg);
+            border: 1px solid var(--success-green);
+            color: var(--text-white);
+            padding: 15px 25px;
+            border-radius: 12px;
+            z-index: 2000;
+            animation: slideInRight 0.3s ease, fadeOut 0.3s ease 2.7s;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.4);
+            font-family: 'DM Sans', sans-serif;
+        }
+        @keyframes slideInRight {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        @keyframes fadeOut { to { opacity: 0; } }
+
+        .screen-tab { animation: fadeIn 0.3s ease-in-out; }
+
+        .badge-red { animation: pulseGlow 2s infinite; }
+        @keyframes pulseGlow {
+            0%,100% { box-shadow: 0 0 5px rgba(239,68,68,0.3); }
+            50% { box-shadow: 0 0 15px rgba(239,68,68,0.6); }
+        }
+
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: var(--bg-color); }
+        ::-webkit-scrollbar-thumb { background: var(--card-border); border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--primary-blue); }
+    </style>
+</head>
+<body>
+
+    <!-- SCREEN 1: LOGIN / SIGNUP -->
+    <div id="screen-login" class="screen active">
+        <div class="auth-container">
+            <div class="auth-box">
+                <div class="logo">
+                    🤖 <span>StudyAI</span>
+                </div>
+                
+                <div id="login-form">
+                    <h2 style="text-align: center; margin-bottom: 25px;">Welcome Back, Student!</h2>
+                    
+                    <button class="btn btn-google">
+                        <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+                        Sign in with Google
+                    </button>
+                    <!-- Django API: POST /api/auth/google/ to handle Google token -->
+
+                    <div class="divider">or continue with email</div>
+
+                    <input type="email" id="login-email" placeholder="Email Address" required>
+                    <div class="error-msg" id="login-email-err">Please enter a valid email</div>
+                    
+                    <div style="position: relative;">
+                        <input type="password" id="login-password" placeholder="Password" required>
+                        <span id="toggle-pwd" style="position: absolute; right: 15px; top: 12px; cursor: pointer;">👁️</span>
+                    </div>
+                    <div class="error-msg" id="login-pwd-err">Password is required</div>
+
+                    <button class="btn btn-primary" onclick="handleLogin()">Login</button>
+                    <!-- Django API: POST /api/auth/login/ -> returns JWT token -->
+
+                    <p style="text-align: center; margin-top: 20px; font-size: 14px;">
+                        New here? <a href="#" onclick="toggleAuthForm()" style="color: var(--primary-blue); text-decoration: none;">Create Account</a>
+                    </p>
+                </div>
+
+                <div id="signup-form" style="display: none;">
+                    <h2 style="text-align: center; margin-bottom: 25px;">Create Account</h2>
+                    <input type="text" id="reg-name" placeholder="Full Name">
+                    <input type="email" id="reg-email" placeholder="Email Address">
+                    <input type="text" id="reg-college" placeholder="College Name">
+                    <input type="password" id="reg-password" placeholder="Password">
+                    <input type="password" id="reg-confirm" placeholder="Confirm Password">
+                    <button class="btn btn-primary" onclick="handleSignup()">Create Account</button>
+                    <!-- Django API: POST /api/auth/register/ -> creates User model -->
+
+                    <p style="text-align: center; margin-top: 20px; font-size: 14px;">
+                        Already have an account? <a href="#" onclick="toggleAuthForm()" style="color: var(--primary-blue); text-decoration: none;">Login</a>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SCREEN 2: ONBOARDING -->
+    <div id="screen-onboarding" class="screen">
+        <div class="auth-container">
+            <div class="auth-box" style="max-width: 600px;">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 14px;">
+                    <span id="ob-step-text">Step 1 of 3</span>
+                </div>
+                <div class="progress-bar-bg" style="margin-bottom: 30px;">
+                    <div id="ob-progress" class="progress-bar-fill" style="width: 33%;"></div>
+                </div>
+
+                <!-- Step 1 -->
+                <div id="ob-step-1">
+                    <h2 style="margin-bottom: 20px;">Tell us about yourself</h2>
+                    <input type="text" placeholder="College Name" value="NIT Bhopal">
+                    <select>
+                        <option value="">Select Semester</option>
+                        <option value="1">1st Semester</option>
+                        <option value="2">2nd Semester</option>
+                        <option value="3">3rd Semester</option>
+                        <option value="4">4th Semester</option>
+                        <option value="5" selected>5th Semester</option>
+                        <option value="6">6th Semester</option>
+                        <option value="7">7th Semester</option>
+                        <option value="8">8th Semester</option>
+                    </select>
+                    <select>
+                        <option value="">Select Branch</option>
+                        <option value="CS" selected>Computer Science (CS)</option>
+                        <option value="IT">Information Technology (IT)</option>
+                        <option value="ECE">Electronics (ECE)</option>
+                        <option value="ME">Mechanical</option>
+                        <option value="Civil">Civil</option>
+                        <option value="Other">Other</option>
+                    </select>
+                    <!-- Django API: PUT /api/profile/update/ -> updates Profile model -->
+                    <button class="btn btn-primary" onclick="nextOnboardingStep(2)" style="margin-top: 20px;">Next Step</button>
+                </div>
+
+                <!-- Step 2 -->
+                <div id="ob-step-2" style="display: none;">
+                    <h2 style="margin-bottom: 20px;">Add your subjects</h2>
+                    <div id="ob-subjects-list">
+                        <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                            <input type="text" placeholder="Subject Name" value="Mathematics" style="margin: 0;">
+                            <input type="number" placeholder="Total Topics" value="12" style="margin: 0; width: 120px;">
+                        </div>
+                        <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                            <input type="text" placeholder="Subject Name" value="Data Structures" style="margin: 0;">
+                            <input type="number" placeholder="Total Topics" value="15" style="margin: 0; width: 120px;">
+                        </div>
+                    </div>
+                    <button class="btn btn-outline" style="margin-bottom: 20px;" onclick="addOnboardingSubject()">+ Add Another Subject</button>
+                    <!-- Django API: POST /api/subjects/ -> creates Subject model -->
+                    <div style="display: flex; gap: 10px;">
+                        <button class="btn btn-outline" onclick="nextOnboardingStep(1)">Back</button>
+                        <button class="btn btn-primary" onclick="nextOnboardingStep(3)">Next Step</button>
+                    </div>
+                </div>
+
+                <!-- Step 3 -->
+                <div id="ob-step-3" style="display: none;">
+                    <h2 style="margin-bottom: 20px;">Add your exam dates</h2>
+                    <div style="margin-bottom: 15px;">
+                        <label style="font-size: 14px; margin-bottom: 5px; display: block;">Mathematics Mid Term</label>
+                        <input type="date" id="dummy-date-1">
+                    </div>
+                    <div style="margin-bottom: 20px;">
+                        <label style="font-size: 14px; margin-bottom: 5px; display: block;">Data Structures Mid Term</label>
+                        <input type="date" id="dummy-date-2">
+                    </div>
+                    <!-- Django API: POST /api/exams/ -> creates Exam model -->
+                    <div style="display: flex; gap: 10px;">
+                        <button class="btn btn-outline" onclick="nextOnboardingStep(2)">Back</button>
+                        <button class="btn btn-primary" onclick="finishOnboarding()">Let's Start Studying!</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIN APP LAYOUT (For screens 3, 4, 5) -->
+    <div id="app-wrapper" style="display: none; width: 100%;">
+        
+        <!-- Sidebar Navigation -->
+        <nav class="sidebar">
+            <div class="logo" style="margin-bottom: 40px; margin-top: 10px;">
+                🤖 <span>StudyAI</span>
+            </div>
+            <div class="nav-item active" onclick="switchMainTab('dashboard', this)">
+                <span style="font-size: 20px;">📊</span> <span>Dashboard</span>
+            </div>
+            <div class="nav-item" onclick="switchMainTab('planner', this)">
+                <span style="font-size: 20px;">📅</span> <span>Study Planner</span>
+            </div>
+            <div class="nav-item" onclick="switchMainTab('subjects', this)">
+                <span style="font-size: 20px;">📚</span> <span>Subjects & Exams</span>
+            </div>
+            <div class="nav-item">
+                <span style="font-size: 20px;">📈</span> <span>Progress</span>
+            </div>
+            <div style="flex-grow: 1;"></div>
+            <div class="nav-item">
+                <span style="font-size: 20px;">⚙️</span> <span>Settings</span>
+            </div>
+        </nav>
+
+        <div class="main-content">
+            <!-- Top Nav -->
+            <header class="top-nav">
+                <div></div> <!-- Placeholder for mobile menu toggle -->
+                <div class="user-profile">
+                    <div style="text-align: right;">
+                        <div style="color: white; font-weight: 500;">Rahul Sharma</div>
+                        <div style="font-size: 12px; color: var(--text-gray);">NIT Bhopal • 5th Sem</div>
+                    </div>
+                    <div class="avatar">RS</div>
+                    <button class="btn btn-outline" style="padding: 8px 16px; margin-left: 10px;" onclick="doLogout()">Logout</button>
+                    <!-- Django API: POST /api/auth/logout/ -> blacklists JWT token -->
+                </div>
+            </header>
+
+            <!-- SCREEN 3: DASHBOARD -->
+            <div id="tab-dashboard" class="screen-tab active">
+                <!-- Welcome Card -->
+                <div class="card" style="margin-bottom: 25px; background: linear-gradient(135deg, rgba(30,30,46,1) 0%, rgba(15,15,35,1) 100%);">
+                    <h1 id="greeting-text" style="margin-bottom: 10px;">Good Morning, Rahul! Ready to study?</h1>
+                    <p id="motivational-quote" style="color: var(--primary-blue); font-style: italic;">
+                        "The beautiful thing about learning is that nobody can take it away from you."
+                    </p>
+                    <!-- Django API: GET /api/dashboard/ -> returns all widget data -->
+                </div>
+
+                <div class="dashboard-grid">
+                    <!-- Today's Plan -->
+                    <div class="card col-8">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                            <h3>Today's Study Plan</h3>
+                            <button class="btn btn-outline" style="padding: 5px 10px; font-size: 12px; width: auto;">View All</button>
+                        </div>
+                        
+                        <div style="display: flex; flex-direction: column; gap: 15px;">
+                            <div style="display: flex; align-items: center; pading: 10px; background: rgba(255,255,255,0.03); border-radius: 8px; padding: 15px;">
+                                <div style="width: 80px; font-weight: 600; color: var(--text-white);">09:00 AM</div>
+                                <div style="width: 4px; height: 40px; background: var(--primary-blue); border-radius: 2px; margin: 0 15px;"></div>
+                                <div>
+                                    <div style="color: var(--text-white); font-weight: 500;">Mathematics</div>
+                                    <div style="font-size: 12px;">Linear Algebra Practice</div>
+                                </div>
+                            </div>
+                            <!-- Django API: GET /api/study-plan/today/ -->
+                            <div style="display: flex; align-items: center; pading: 10px; background: rgba(255,255,255,0.03); border-radius: 8px; padding: 15px;">
+                                <div style="width: 80px; font-weight: 600; color: var(--text-white);">02:00 PM</div>
+                                <div style="width: 4px; height: 40px; background: var(--warning-amber); border-radius: 2px; margin: 0 15px;"></div>
+                                <div>
+                                    <div style="color: var(--text-white); font-weight: 500;">Data Structures</div>
+                                    <div style="font-size: 12px;">Trees & Graphs</div>
+                                </div>
+                            </div>
+                            <div style="display: flex; align-items: center; pading: 10px; background: rgba(255,255,255,0.03); border-radius: 8px; padding: 15px;">
+                                <div style="width: 80px; font-weight: 600; color: var(--text-white);">07:00 PM</div>
+                                <div style="width: 4px; height: 40px; background: var(--secondary-purple); border-radius: 2px; margin: 0 15px;"></div>
+                                <div>
+                                    <div style="color: var(--text-white); font-weight: 500;">Computer Networks</div>
+                                    <div style="font-size: 12px;">OSI Model Review</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Exam Countdown -->
+                    <div class="card col-4">
+                        <h3 style="margin-bottom: 20px;">Exam Countdown</h3>
+                        <!-- Django API: GET /api/exams/upcoming/?limit=3 -->
+                        <div id="exam-countdown-timeline" class="timeline">
+                            <!-- Dynamically populated by JS -->
+                        </div>
+                    </div>
+
+                    <!-- Subject Progress -->
+                    <div class="card col-6">
+                        <h3 style="margin-bottom: 20px;">Subject Progress</h3>
+                        <!-- Django API: GET /api/subjects/progress/ -->
+                        <div id="dashboard-progress">
+                            <!-- Dynamically populated by JS -->
+                        </div>
+                    </div>
+
+                    <!-- Weekly Stats -->
+                    <div class="card col-6">
+                        <h3 style="margin-bottom: 5px;">Weekly Study Hours</h3>
+                        <p style="font-size: 12px; margin-bottom: 10px;">Dark blue: Planned • Light blue: Completed</p>
+                        <!-- Django API: GET /api/study-sessions/weekly-stats/ -->
+                        <div class="bar-chart">
+                            <div class="bar-col"><div class="bar-container"><div class="bar planned" style="height: 60%;"></div><div class="bar" style="height: 50%;"></div></div><span style="font-size: 12px;">Mon</span></div>
+                            <div class="bar-col"><div class="bar-container"><div class="bar planned" style="height: 80%;"></div><div class="bar" style="height: 75%;"></div></div><span style="font-size: 12px;">Tue</span></div>
+                            <div class="bar-col"><div class="bar-container"><div class="bar planned" style="height: 50%;"></div><div class="bar" style="height: 60%;"></div></div><span style="font-size: 12px;">Wed</span></div>
+                            <div class="bar-col"><div class="bar-container"><div class="bar planned" style="height: 90%;"></div><div class="bar" style="height: 40%;"></div></div><span style="font-size: 12px;">Thu</span></div>
+                            <div class="bar-col"><div class="bar-container"><div class="bar planned" style="height: 70%;"></div><div class="bar" style="height: 70%;"></div></div><span style="font-size: 12px;">Fri</span></div>
+                            <div class="bar-col"><div class="bar-container"><div class="bar planned" style="height: 40%;"></div><div class="bar" style="height: 20%;"></div></div><span style="font-size: 12px;">Sat</span></div>
+                            <div class="bar-col"><div class="bar-container"><div class="bar planned" style="height: 60%;"></div><div class="bar" style="height: 0%;"></div></div><span style="font-size: 12px;">Sun</span></div>
+                        </div>
+                    </div>
+
+                    <!-- Quick Actions -->
+                    <div style="grid-column: span 12;">
+                        <div class="card">
+                            <h3 style="margin-bottom: 20px;">⚡ Quick Actions</h3>
+                            <div class="quick-actions-grid">
+                                <button class="quick-action-btn" onclick="openModal('add-subject-modal')">
+                                    <span class="quick-action-icon">📚</span>
+                                    <span>Add Subject</span>
+                                </button>
+                                <button class="quick-action-btn" onclick="openModal('session-modal')">
+                                    <span class="quick-action-icon">📝</span>
+                                    <span>Log Study Session</span>
+                                </button>
+                                <button class="quick-action-btn" onclick="switchMainTab('planner', document.querySelectorAll('.nav-item')[1])">
+                                    <span class="quick-action-icon">📅</span>
+                                    <span>View Full Plan</span>
+                                </button>
+                                <button class="quick-action-btn" onclick="switchMainTab('subjects', document.querySelectorAll('.nav-item')[2])">
+                                    <span class="quick-action-icon">✅</span>
+                                    <span>Mark Topics Done</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SCREEN 4: STUDY PLANNER -->
+            <div id="tab-planner" class="screen-tab" style="display: none;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
+                    <h1>Study Planner</h1>
+                    <button class="btn btn-primary" style="width: auto;" onclick="openModal('session-modal')">+ Add Session</button>
+                    <!-- Django API: POST /api/study-sessions/ -> creates StudySession model -->
+                </div>
+
+                <div class="dashboard-grid">
+                    <div class="col-8">
+                        <div class="calendar">
+                            <div class="calendar-header">
+                                <button class="btn btn-outline" style="width: auto; padding: 5px 10px;" onclick="prevMonth()">&lt;</button>
+                                <h3 id="current-month-display">November 2026</h3>
+                                <button class="btn btn-outline" style="width: auto; padding: 5px 10px;" onclick="nextMonth()">&gt;</button>
+                            </div>
+                            <div class="calendar-grid">
+                                <div class="calendar-day-name">Sun</div>
+                                <div class="calendar-day-name">Mon</div>
+                                <div class="calendar-day-name">Tue</div>
+                                <div class="calendar-day-name">Wed</div>
+                                <div class="calendar-day-name">Thu</div>
+                                <div class="calendar-day-name">Fri</div>
+                                <div class="calendar-day-name">Sat</div>
+                                <!-- Days will be generated by JS -->
+                            </div>
+                        </div>
+
+                        <!-- Selected Date Sessions -->
+                        <div class="card" style="margin-top: 20px;">
+                            <h3 style="margin-bottom: 15px;">Sessions for <span id="selected-date-text">Today</span></h3>
+                            <!-- Django API: GET /api/study-sessions/?date=YYYY-MM-DD -->
+                            <div id="date-sessions-list">
+                                <!-- Dynamically populated by JS -->
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-4">
+                        <div class="card" style="margin-bottom: 20px;">
+                            <h3 style="margin-bottom: 15px;">Weekly Summary</h3>
+                            <div style="margin-bottom: 15px;">
+                                <div style="font-size: 14px; color: var(--text-gray);">Total Hours</div>
+                                <div style="font-size: 24px; font-weight: 700; color: white;">24.5 hrs</div>
+                            </div>
+                            <div style="margin-bottom: 15px;">
+                                <div style="font-size: 14px; color: var(--text-gray);">Most Studied</div>
+                                <div style="font-size: 18px; font-weight: 500; color: var(--primary-blue);">Mathematics</div>
+                            </div>
+                            <div>
+                                <div style="font-size: 14px; color: var(--text-gray);">Current Streak</div>
+                                <div style="font-size: 18px; font-weight: 500; color: var(--success-green);">🔥 5 Days</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SCREEN 5: SUBJECTS & EXAMS -->
+            <div id="tab-subjects" class="screen-tab" style="display: none;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
+                    <h1>Subjects & Exams</h1>
+                </div>
+
+                <div class="dashboard-grid">
+                    <div class="col-8">
+                        <div class="subjects-grid">
+                            <!-- Subject Card 1 -->
+                            <div class="card" onclick="openSyllabus('Mathematics')">
+                                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px;">
+                                    <div>
+                                        <div style="font-size: 24px; margin-bottom: 5px;">➗</div>
+                                        <h3 style="margin-bottom: 5px;">Mathematics</h3>
+                                        <div style="font-size: 12px; color: var(--text-gray);">8/12 Topics Completed</div>
+                                    </div>
+                                    <div class="circular-progress" style="background: conic-gradient(var(--primary-blue) 65%, rgba(255,255,255,0.1) 0%);">
+                                        <span class="progress-value">65%</span>
+                                    </div>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; align-items: center;">
+                                    <span class="badge badge-red">Exam in 5d</span>
+                                    <button class="btn btn-outline" style="padding: 5px 15px; width: auto; font-size: 12px;">View Syllabus</button>
+                                </div>
+                                <!-- Django API: GET /api/subjects/{id}/topics/ -->
+                            </div>
+
+                            <!-- Subject Card 2 -->
+                            <div class="card" onclick="openSyllabus('Data Structures')">
+                                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px;">
+                                    <div>
+                                        <div style="font-size: 24px; margin-bottom: 5px;">💻</div>
+                                        <h3 style="margin-bottom: 5px;">Data Structures</h3>
+                                        <div style="font-size: 12px; color: var(--text-gray);">6/15 Topics Completed</div>
+                                    </div>
+                                    <div class="circular-progress" style="background: conic-gradient(var(--warning-amber) 40%, rgba(255,255,255,0.1) 0%);">
+                                        <span class="progress-value">40%</span>
+                                    </div>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; align-items: center;">
+                                    <span class="badge badge-amber">Exam in 12d</span>
+                                    <button class="btn btn-outline" style="padding: 5px 15px; width: auto; font-size: 12px;">View Syllabus</button>
+                                </div>
+                            </div>
+
+                            <!-- Subject Card 3 -->
+                            <div class="card" onclick="openSyllabus('Computer Networks')">
+                                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px;">
+                                    <div>
+                                        <div style="font-size: 24px; margin-bottom: 5px;">🌐</div>
+                                        <h3 style="margin-bottom: 5px;">Computer Networks</h3>
+                                        <div style="font-size: 12px; color: var(--text-gray);">3/10 Topics Completed</div>
+                                    </div>
+                                    <div class="circular-progress" style="background: conic-gradient(var(--danger-red) 25%, rgba(255,255,255,0.1) 0%);">
+                                        <span class="progress-value">25%</span>
+                                    </div>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; align-items: center;">
+                                    <span class="badge badge-green">Exam in 20d</span>
+                                    <button class="btn btn-outline" style="padding: 5px 15px; width: auto; font-size: 12px;">View Syllabus</button>
+                                </div>
+                            </div>
+
+                            <!-- Subject Card 4 -->
+                            <div class="card" onclick="openSyllabus('Operating Systems')">
+                                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px;">
+                                    <div>
+                                        <div style="font-size: 24px; margin-bottom: 5px;">⚙️</div>
+                                        <h3 style="margin-bottom: 5px;">Operating Systems</h3>
+                                        <div style="font-size: 12px; color: var(--text-gray);">8/10 Topics Completed</div>
+                                    </div>
+                                    <div class="circular-progress" style="background: conic-gradient(var(--success-green) 80%, rgba(255,255,255,0.1) 0%);">
+                                        <span class="progress-value">80%</span>
+                                    </div>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; align-items: center;">
+                                    <span class="badge badge-green">Exam in 28d</span>
+                                    <button class="btn btn-outline" style="padding: 5px 15px; width: auto; font-size: 12px;">View Syllabus</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Syllabus Expand Area (Hidden by default) -->
+                        <div id="syllabus-view" class="card" style="margin-top: 20px; display: none;">
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 20px;">
+                                <h3 id="syllabus-title">Mathematics Syllabus</h3>
+                                <button class="btn btn-outline" style="width: auto; padding: 5px 10px; border: none;" onclick="closeSyllabus()">✕</button>
+                            </div>
+                            <div style="margin-bottom: 20px;">
+                                <div style="display: flex; justify-content: space-between; font-size: 14px; margin-bottom: 5px;">
+                                    <span style="color: white;">Completion</span>
+                                    <span id="syllabus-progress-text">0%</span>
+                                </div>
+                                <div class="progress-bar-bg"><div id="syllabus-progress-bar" class="progress-bar-fill" style="width: 0%;"></div></div>
+                            </div>
+                            <div id="syllabus-topics-list">
+                                <!-- Dynamically populated by JS -->
+                            </div>
+                            <!-- Django API: PATCH /api/topics/{id}/ -> updates is_completed field -->
+                        </div>
+                    </div>
+
+                    <div class="col-4">
+                        <div class="card">
+                            <h3 style="margin-bottom: 20px;">All Upcoming Exams</h3>
+                            <div class="timeline">
+                                <div class="timeline-item">
+                                    <div style="color: white; font-weight: 500;">Mathematics Mid Term</div>
+                                    <div style="font-size: 12px;">15 Nov 2026</div>
+                                </div>
+                                <div class="timeline-item">
+                                    <div style="color: white; font-weight: 500;">Data Structures</div>
+                                    <div style="font-size: 12px;">22 Nov 2026</div>
+                                </div>
+                                <div class="timeline-item">
+                                    <div style="color: white; font-weight: 500;">Computer Networks</div>
+                                    <div style="font-size: 12px;">30 Nov 2026</div>
+                                </div>
+                                <div class="timeline-item">
+                                    <div style="color: white; font-weight: 500;">Operating Systems</div>
+                                    <div style="font-size: 12px;">05 Dec 2026</div>
+                                </div>
+                            </div>
+                            <!-- Django API: GET /api/exams/?ordering=exam_date -->
+                        </div>
+                    </div>
+                </div>
+
+                <button class="floating-btn" onclick="openModal('add-subject-modal')">+</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modals -->
+    <div id="session-modal" class="modal-overlay">
+        <div class="modal-content">
+            <h3 style="margin-bottom: 20px;">Add Study Session</h3>
+            <select id="session-subject">
+                <option>Mathematics</option>
+                <option>Data Structures</option>
+                <option>Computer Networks</option>
+                <option>Operating Systems</option>
+            </select>
+            <input type="date" id="session-date">
+            <div style="display: flex; gap: 10px;">
+                <input type="time" id="session-start" placeholder="Start Time">
+                <input type="time" id="session-end" placeholder="End Time">
+            </div>
+            <textarea id="session-notes" rows="3" placeholder="Study Notes / Goals"></textarea>
+            <div style="display: flex; gap: 10px; margin-top: 10px;">
+                <button class="btn btn-outline" onclick="closeModal('session-modal')">Cancel</button>
+                <button class="btn btn-primary" onclick="saveStudySession()">Save Session</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Subject Modal -->
+    <div id="add-subject-modal" class="modal-overlay">
+        <div class="modal-content">
+            <h3 style="margin-bottom: 20px;">Add New Subject</h3>
+            <input type="text" id="new-subject-name" placeholder="Subject Name (e.g. Machine Learning)">
+            <input type="number" id="new-subject-topics" placeholder="Total Number of Topics" min="1" max="50">
+            <input type="text" id="new-subject-exam" placeholder="Exam Name (e.g. End Semester)">
+            <input type="date" id="new-subject-exam-date">
+            <div style="display: flex; gap: 10px; margin-top: 10px;">
+                <button class="btn btn-outline" onclick="closeModal('add-subject-modal')">Cancel</button>
+                <button class="btn btn-primary" onclick="addNewSubject()">Add Subject</button>
+            </div>
+            <!-- Django API: POST /api/subjects/ → creates Subject model -->
+            <!-- Django API: POST /api/exams/ → creates Exam model -->
+        </div>
+    </div>
+
+    <script>
+        // ===============================
+        // STUDYAI — CLIENT-SIDE APPLICATION
+        // ===============================
+
+        const quotes = [
+            "The beautiful thing about learning is that nobody can take it away from you.",
+            "Education is the passport to the future, for tomorrow belongs to those who prepare for it today.",
+            "Success is the sum of small efforts, repeated day in and day out.",
+            "Don't let what you cannot do interfere with what you can do.",
+            "The expert in anything was once a beginner.",
+            "It does not matter how slowly you go as long as you do not stop.",
+            "Push yourself, because no one else is going to do it for you.",
+            "Dream big. Start small. Act now.",
+            "The more that you read, the more things you will know.",
+            "Hard work beats talent when talent doesn't work hard."
+        ];
+
+        // ===============================
+        // DUMMY DATA — Realistic Indian student
+        // ===============================
+        const today = new Date();
+
+        const subjectsData = {
+            'Mathematics': {
+                icon: '➗', color: 'var(--primary-blue)', totalTopics: 12,
+                topics: [
+                    { name: 'Matrices and Determinants', completed: true },
+                    { name: 'Linear Equations', completed: true },
+                    { name: 'Vector Spaces', completed: true },
+                    { name: 'Eigenvalues & Eigenvectors', completed: true },
+                    { name: 'Differential Calculus', completed: true },
+                    { name: 'Integral Calculus', completed: true },
+                    { name: 'Partial Derivatives', completed: true },
+                    { name: 'Laplace Transforms', completed: true },
+                    { name: 'Fourier Series', completed: false },
+                    { name: 'Z-Transforms', completed: false },
+                    { name: 'Probability Theory', completed: false },
+                    { name: 'Complex Analysis', completed: false }
+                ],
+                examName: 'Mathematics Mid Term',
+                examDate: new Date(today.getTime() + 14 * 86400000)
+            },
+            'Data Structures': {
+                icon: '💻', color: 'var(--warning-amber)', totalTopics: 15,
+                topics: [
+                    { name: 'Arrays & Strings', completed: true },
+                    { name: 'Linked Lists', completed: true },
+                    { name: 'Stacks', completed: true },
+                    { name: 'Queues', completed: true },
+                    { name: 'Trees — Binary Trees', completed: true },
+                    { name: 'BST Operations', completed: true },
+                    { name: 'AVL Trees', completed: false },
+                    { name: 'Heaps & Priority Queues', completed: false },
+                    { name: 'Graphs — BFS & DFS', completed: false },
+                    { name: 'Shortest Path Algorithms', completed: false },
+                    { name: 'Hashing', completed: false },
+                    { name: 'Sorting Algorithms', completed: false },
+                    { name: 'Dynamic Programming', completed: false },
+                    { name: 'Greedy Algorithms', completed: false },
+                    { name: 'Tries & Segment Trees', completed: false }
+                ],
+                examName: 'Data Structures Final',
+                examDate: new Date(today.getTime() + 21 * 86400000)
+            },
+            'Computer Networks': {
+                icon: '🌐', color: 'var(--danger-red)', totalTopics: 10,
+                topics: [
+                    { name: 'OSI Model', completed: true },
+                    { name: 'TCP/IP Protocol Suite', completed: true },
+                    { name: 'Data Link Layer', completed: true },
+                    { name: 'Network Layer — IP Addressing', completed: false },
+                    { name: 'Routing Algorithms', completed: false },
+                    { name: 'Transport Layer — TCP/UDP', completed: false },
+                    { name: 'Application Layer Protocols', completed: false },
+                    { name: 'DNS & DHCP', completed: false },
+                    { name: 'Network Security Basics', completed: false },
+                    { name: 'Socket Programming', completed: false }
+                ],
+                examName: 'Computer Networks Mid',
+                examDate: new Date(today.getTime() + 28 * 86400000)
+            },
+            'Operating Systems': {
+                icon: '⚙️', color: 'var(--success-green)', totalTopics: 10,
+                topics: [
+                    { name: 'OS Introduction & Types', completed: true },
+                    { name: 'Process Management', completed: true },
+                    { name: 'CPU Scheduling', completed: true },
+                    { name: 'Process Synchronization', completed: true },
+                    { name: 'Deadlocks', completed: true },
+                    { name: 'Memory Management', completed: true },
+                    { name: 'Virtual Memory', completed: true },
+                    { name: 'File Systems', completed: true },
+                    { name: 'I/O Systems', completed: false },
+                    { name: 'Protection & Security', completed: false }
+                ],
+                examName: 'Operating Systems End Sem',
+                examDate: new Date(today.getTime() + 35 * 86400000)
+            }
+        };
+
+        // Study sessions
+        const studySessions = [
+            { subject: 'Mathematics', date: fmtDate(today), startTime: '09:00', endTime: '11:00', notes: 'Linear Algebra Practice' },
+            { subject: 'Data Structures', date: fmtDate(today), startTime: '14:00', endTime: '16:00', notes: 'Trees & Graphs' },
+            { subject: 'Computer Networks', date: fmtDate(today), startTime: '19:00', endTime: '20:00', notes: 'OSI Model Review' }
+        ];
+
+        let currentCalMonth = today.getMonth();
+        let currentCalYear = today.getFullYear();
+        let currentSyllabusSubject = null;
+        let onboardingSubjectCount = 2;
+
+        // ===============================
+        // UTILITY FUNCTIONS
+        // ===============================
+        function fmtDate(d) { return d.toISOString().split('T')[0]; }
+
+        function fmtDateDisplay(d) {
+            const m = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+            return `${d.getDate()} ${m[d.getMonth()]} ${d.getFullYear()}`;
+        }
+
+        function daysUntil(d) { return Math.ceil((d - today) / 86400000); }
+
+        function getGreeting() {
+            const h = new Date().getHours();
+            if (h < 12) return 'Good Morning';
+            if (h < 17) return 'Good Afternoon';
+            return 'Good Evening';
+        }
+
+        function badgeClass(days) {
+            if (days <= 7) return 'badge-red';
+            if (days <= 14) return 'badge-amber';
+            return 'badge-green';
+        }
+
+        function getProgress(name) {
+            const s = subjectsData[name];
+            if (!s) return 0;
+            return Math.round((s.topics.filter(t => t.completed).length / s.topics.length) * 100);
+        }
+
+        function showToast(msg) {
+            const t = document.createElement('div');
+            t.className = 'toast';
+            t.innerHTML = '✅ ' + msg;
+            document.body.appendChild(t);
+            setTimeout(() => t.remove(), 3000);
+        }
+
+        // ===============================
+        // SCREEN NAVIGATION
+        // ===============================
+        function showScreen(id) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            const el = document.getElementById(id);
+            if (el) {
+                el.classList.add('active');
+                if (id === 'app-wrapper') el.style.display = 'flex';
+            }
+        }
+
+        function toggleAuthForm() {
+            const login = document.getElementById('login-form');
+            const signup = document.getElementById('signup-form');
+            if (login.style.display === 'none') {
+                login.style.display = 'block';
+                signup.style.display = 'none';
+            } else {
+                login.style.display = 'none';
+                signup.style.display = 'block';
+            }
+        }
+
+        // ===============================
+        // AUTH — Login, Signup, Logout
+        // ===============================
+        function handleLogin() {
+            // Django API: POST /api/auth/login/ → returns JWT token
+            const email = document.getElementById('login-email').value;
+            const pwd = document.getElementById('login-password').value;
+            let valid = true;
+
+            if (!email.includes('@') || !email.includes('.')) {
+                document.getElementById('login-email-err').style.display = 'block';
+                valid = false;
+            } else {
+                document.getElementById('login-email-err').style.display = 'none';
+            }
+            if (pwd.length < 1) {
+                document.getElementById('login-pwd-err').style.display = 'block';
+                valid = false;
+            } else {
+                document.getElementById('login-pwd-err').style.display = 'none';
+            }
+
+            if (valid) {
+                // TODO: Uncomment when Django backend is ready
+                // fetch('/api/auth/login/', { method: 'POST', headers: {'Content-Type':'application/json'},
+                //     body: JSON.stringify({ email, password: pwd })
+                // }).then(r => r.json()).then(data => { localStorage.setItem('jwt_token', data.token); ... });
+                showScreen('app-wrapper');
+                initDashboard();
+                showToast('Welcome back, Rahul!');
+            }
+        }
+
+        function handleSignup() {
+            // Django API: POST /api/auth/register/ → creates User model
+            const name = document.getElementById('reg-name').value;
+            const email = document.getElementById('reg-email').value;
+            const college = document.getElementById('reg-college').value;
+            const pw = document.getElementById('reg-password').value;
+            const confirm = document.getElementById('reg-confirm').value;
+
+            let errors = [];
+            if (!name.trim()) errors.push('Full name is required');
+            if (!email.includes('@') || !email.includes('.')) errors.push('Valid email is required');
+            if (!college.trim()) errors.push('College name is required');
+            if (pw.length < 6) errors.push('Password must be at least 6 characters');
+            if (pw !== confirm) errors.push('Passwords do not match');
+
+            if (errors.length) { alert(errors.join('\n')); return; }
+
+            // TODO: Uncomment when Django backend is ready
+            // fetch('/api/auth/register/', { method:'POST', ... });
+            showScreen('screen-onboarding');
+            showToast('Account created! Let\'s set you up.');
+        }
+
+        function doLogout() {
+            // Django API: POST /api/auth/logout/ → blacklists JWT token
+            // TODO: Uncomment when Django backend is ready
+            // fetch('/api/auth/logout/', { method:'POST', headers:{'Authorization':'Bearer '+localStorage.getItem('jwt_token')} });
+            showScreen('screen-login');
+            document.getElementById('app-wrapper').style.display = 'none';
+        }
+
+        // ===============================
+        // ONBOARDING
+        // ===============================
+        function nextOnboardingStep(step) {
+            // Django API: PUT /api/profile/update/ → updates Profile model
+            document.getElementById('ob-step-1').style.display = 'none';
+            document.getElementById('ob-step-2').style.display = 'none';
+            document.getElementById('ob-step-3').style.display = 'none';
+            document.getElementById(`ob-step-${step}`).style.display = 'block';
+            document.getElementById('ob-step-text').innerText = `Step ${step} of 3`;
+            document.getElementById('ob-progress').style.width = `${step * 33.33}%`;
+        }
+
+        function addOnboardingSubject() {
+            if (onboardingSubjectCount >= 6) { showToast('Maximum 6 subjects allowed'); return; }
+            onboardingSubjectCount++;
+            const container = document.getElementById('ob-subjects-list');
+            const row = document.createElement('div');
+            row.style.cssText = 'display:flex;gap:10px;margin-bottom:15px;animation:fadeIn 0.3s;';
+            row.innerHTML = `
+                <input type="text" placeholder="Subject Name" style="margin:0;">
+                <input type="number" placeholder="Total Topics" style="margin:0;width:120px;">
+                <button onclick="this.parentElement.remove();onboardingSubjectCount--;"
+                    style="background:none;border:1px solid var(--danger-red);color:var(--danger-red);
+                    border-radius:8px;padding:0 12px;cursor:pointer;font-size:16px;transition:all 0.3s;">✕</button>
+            `;
+            container.appendChild(row);
+            // Django API: POST /api/subjects/ → creates Subject model
+        }
+
+        function finishOnboarding() {
+            // Django API: POST /api/exams/ → creates Exam model
+            document.getElementById('screen-onboarding').classList.remove('active');
+            document.getElementById('app-wrapper').style.display = 'flex';
+            initDashboard();
+            showToast('Setup complete! Let\'s start studying! 🎉');
+        }
+
+        // ===============================
+        // MAIN TAB NAVIGATION
+        // ===============================
+        function switchMainTab(tabId, element) {
+            document.querySelectorAll('.screen-tab').forEach(t => t.style.display = 'none');
+            document.getElementById(`tab-${tabId}`).style.display = 'block';
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+            if (element) element.classList.add('active');
+            if (tabId === 'planner') renderCalendar();
+            if (tabId === 'subjects') updateAllSubjectCards();
+        }
+
+        // ===============================
+        // DASHBOARD
+        // ===============================
+        function initDashboard() {
+            // Django API: GET /api/dashboard/ → returns all widget data
+            document.getElementById('greeting-text').innerText = `${getGreeting()}, Rahul! Ready to study?`;
+            const q = quotes[Math.floor(Math.random() * quotes.length)];
+            document.getElementById('motivational-quote').innerText = `"${q}"`;
+
+            const d1 = new Date(today.getTime() + 14 * 86400000);
+            const d2 = new Date(today.getTime() + 21 * 86400000);
+            document.getElementById('dummy-date-1').valueAsDate = d1;
+            document.getElementById('dummy-date-2').valueAsDate = d2;
+
+            updateExamCountdown();
+            updateDashboardProgress();
+        }
+
+        function updateExamCountdown() {
+            // Django API: GET /api/exams/upcoming/?limit=3
+            const container = document.getElementById('exam-countdown-timeline');
+            if (!container) return;
+            container.innerHTML = '';
+
+            const exams = Object.keys(subjectsData)
+                .map(n => ({ name: subjectsData[n].examName, date: subjectsData[n].examDate, days: daysUntil(subjectsData[n].examDate) }))
+                .sort((a, b) => a.days - b.days).slice(0, 3);
+
+            exams.forEach(e => {
+                const item = document.createElement('div');
+                item.className = 'timeline-item';
+                item.innerHTML = `<div style="display:flex;justify-content:space-between;">
+                    <div><div style="color:white;font-weight:500;">${e.name}</div>
+                    <div style="font-size:12px;">${fmtDateDisplay(e.date)}</div></div>
+                    <span class="badge ${badgeClass(e.days)}">${e.days} Days Left</span></div>`;
+                container.appendChild(item);
+            });
+        }
+
+        function updateDashboardProgress() {
+            // Django API: GET /api/subjects/progress/
+            const container = document.getElementById('dashboard-progress');
+            if (!container) return;
+            container.innerHTML = '';
+
+            Object.keys(subjectsData).forEach(name => {
+                const pct = getProgress(name);
+                let bg = 'linear-gradient(90deg, var(--primary-blue), var(--secondary-purple))';
+                if (pct >= 70) bg = 'var(--success-green)';
+                else if (pct >= 40) bg = 'var(--warning-amber)';
+                else if (pct < 30) bg = 'var(--danger-red)';
+
+                const div = document.createElement('div');
+                div.style.marginBottom = '15px';
+                div.innerHTML = `<div style="display:flex;justify-content:space-between;font-size:14px;margin-bottom:5px;">
+                    <span style="color:white;">${name}</span><span>${pct}%</span></div>
+                    <div class="progress-bar-bg"><div class="progress-bar-fill" style="width:${pct}%;background:${bg};"></div></div>`;
+                container.appendChild(div);
+            });
+        }
+
+        function updateAllSubjectCards() {
+            // Sync subject card text with current data (for future dynamic updates)
+        }
+
+        // ===============================
+        // CALENDAR — Proper month rendering
+        // ===============================
+        function renderCalendar() {
+            const grid = document.querySelector('.calendar-grid');
+            grid.querySelectorAll('.calendar-day').forEach(d => d.remove());
+
+            const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+            document.getElementById('current-month-display').innerText = `${monthNames[currentCalMonth]} ${currentCalYear}`;
+
+            const firstDay = new Date(currentCalYear, currentCalMonth, 1).getDay();
+            const daysInMonth = new Date(currentCalYear, currentCalMonth + 1, 0).getDate();
+
+            // Session days for this month
+            const sessionDays = new Set();
+            studySessions.forEach(s => {
+                const d = new Date(s.date);
+                if (d.getMonth() === currentCalMonth && d.getFullYear() === currentCalYear) sessionDays.add(d.getDate());
+            });
+            for (let i = 1; i <= daysInMonth; i++) { if (i % 3 === 0 || i % 5 === 0) sessionDays.add(i); }
+
+            // Empty offset cells
+            for (let i = 0; i < firstDay; i++) {
+                const empty = document.createElement('div');
+                empty.className = 'calendar-day';
+                empty.style.cursor = 'default';
+                grid.appendChild(empty);
+            }
+
+            const todayD = today.getDate(), todayM = today.getMonth(), todayY = today.getFullYear();
+            for (let i = 1; i <= daysInMonth; i++) {
+                const day = document.createElement('div');
+                day.className = 'calendar-day';
+                day.innerText = i;
+                if (i === todayD && currentCalMonth === todayM && currentCalYear === todayY) day.classList.add('active');
+                if (sessionDays.has(i)) day.classList.add('has-session');
+
+                day.onclick = () => {
+                    grid.querySelectorAll('.calendar-day').forEach(d => d.classList.remove('active'));
+                    day.classList.add('active');
+                    const sel = new Date(currentCalYear, currentCalMonth, i);
+                    document.getElementById('selected-date-text').innerText = fmtDateDisplay(sel);
+                    loadDateSessions(sel);
+                    // Django API: GET /api/study-sessions/?date=YYYY-MM-DD
+                };
+                grid.appendChild(day);
+            }
+
+            // Load today's sessions by default
+            loadDateSessions(today);
+        }
+
+        function prevMonth() {
+            currentCalMonth--;
+            if (currentCalMonth < 0) { currentCalMonth = 11; currentCalYear--; }
+            renderCalendar();
+        }
+
+        function nextMonth() {
+            currentCalMonth++;
+            if (currentCalMonth > 11) { currentCalMonth = 0; currentCalYear++; }
+            renderCalendar();
+        }
+
+        function loadDateSessions(date) {
+            // Django API: GET /api/study-sessions/?date=YYYY-MM-DD
+            const container = document.getElementById('date-sessions-list');
+            if (!container) return;
+            container.innerHTML = '';
+            const dateStr = fmtDate(date);
+            const sessions = studySessions.filter(s => s.date === dateStr);
+
+            if (!sessions.length) {
+                container.innerHTML = '<p style="color:var(--text-gray);text-align:center;padding:20px;">No sessions scheduled for this day.</p>';
+                return;
+            }
+            sessions.forEach((s, idx) => {
+                const div = document.createElement('div');
+                div.style.cssText = 'background:rgba(255,255,255,0.03);padding:15px;border-radius:8px;display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;';
+                div.innerHTML = `<div>
+                    <div style="color:white;font-weight:500;">${s.startTime} - ${s.endTime}</div>
+                    <div style="color:var(--primary-blue);">${s.subject}</div>
+                    <div style="font-size:12px;color:var(--text-gray);margin-top:4px;">${s.notes}</div></div>
+                    <div style="display:flex;gap:10px;">
+                    <button class="btn btn-outline" style="padding:5px 10px;width:auto;">Edit</button>
+                    <button class="btn btn-outline" style="padding:5px 10px;width:auto;color:var(--danger-red);border-color:var(--danger-red);" onclick="deleteSession(${idx})">Del</button></div>`;
+                container.appendChild(div);
+            });
+        }
+
+        function deleteSession(idx) {
+            // Django API: DELETE /api/study-sessions/{id}/
+            if (confirm('Delete this study session?')) {
+                studySessions.splice(idx, 1);
+                renderCalendar();
+                showToast('Session deleted');
+            }
+        }
+
+        function saveStudySession() {
+            // Django API: POST /api/study-sessions/ → creates StudySession model
+            const subject = document.getElementById('session-subject').value;
+            const date = document.getElementById('session-date').value;
+            const startTime = document.getElementById('session-start').value;
+            const endTime = document.getElementById('session-end').value;
+            const notes = document.getElementById('session-notes').value;
+
+            if (!date || !startTime || !endTime) { alert('Please fill in all required fields'); return; }
+
+            studySessions.push({ subject, date, startTime, endTime, notes: notes || 'Study session' });
+            closeModal('session-modal');
+            showToast('Study session added!');
+            if (document.getElementById('tab-planner').style.display !== 'none') renderCalendar();
+
+            // TODO: Uncomment when Django backend is ready
+            // fetch('/api/study-sessions/', { method:'POST', headers:{'Content-Type':'application/json',
+            //   'Authorization':'Bearer '+localStorage.getItem('jwt_token')},
+            //   body: JSON.stringify({subject, date, planned_hours:..., notes}) });
+        }
+
+        // ===============================
+        // SYLLABUS & TOPICS
+        // ===============================
+        function openSyllabus(subject) {
+            // Django API: GET /api/subjects/{id}/topics/
+            currentSyllabusSubject = subject;
+            const data = subjectsData[subject];
+            if (!data) return;
+
+            document.getElementById('syllabus-view').style.display = 'block';
+            document.getElementById('syllabus-title').innerText = `${subject} Syllabus`;
+
+            const list = document.getElementById('syllabus-topics-list');
+            list.innerHTML = '';
+
+            data.topics.forEach((topic, idx) => {
+                const item = document.createElement('div');
+                item.className = 'syllabus-item';
+                item.innerHTML = `
+                    <input type="checkbox" class="custom-checkbox" ${topic.completed ? 'checked' : ''}
+                        onchange="updateTopicProgress(this, '${subject}', ${idx})">
+                    <div><div style="color:${topic.completed ? 'var(--success-green)' : 'white'};">${idx + 1}. ${topic.name}</div></div>`;
+                list.appendChild(item);
+            });
+
+            updateSyllabusProgressBar(subject);
+        }
+
+        function closeSyllabus() {
+            document.getElementById('syllabus-view').style.display = 'none';
+            currentSyllabusSubject = null;
+        }
+
+        function updateTopicProgress(checkbox, subject, idx) {
+            // Django API: PATCH /api/topics/{id}/ → updates is_completed field
+            subjectsData[subject].topics[idx].completed = checkbox.checked;
+
+            // Update label color
+            const label = checkbox.parentElement.querySelector('div > div');
+            label.style.color = checkbox.checked ? 'var(--success-green)' : 'white';
+
+            updateSyllabusProgressBar(subject);
+            updateDashboardProgress();
+
+            // TODO: Uncomment when Django backend is ready
+            // fetch(`/api/topics/${topicId}/`, { method:'PATCH',
+            //   headers:{'Content-Type':'application/json','Authorization':'Bearer '+localStorage.getItem('jwt_token')},
+            //   body: JSON.stringify({is_completed: checkbox.checked}) });
+        }
+
+        function updateSyllabusProgressBar(subject) {
+            const pct = getProgress(subject);
+            document.getElementById('syllabus-progress-text').innerText = `${pct}%`;
+            document.getElementById('syllabus-progress-bar').style.width = `${pct}%`;
+        }
+
+        // ===============================
+        // ADD NEW SUBJECT
+        // ===============================
+        function addNewSubject() {
+            // Django API: POST /api/subjects/ → creates Subject model
+            // Django API: POST /api/exams/ → creates Exam model
+            const name = document.getElementById('new-subject-name').value;
+            const topics = parseInt(document.getElementById('new-subject-topics').value);
+            const examName = document.getElementById('new-subject-exam').value;
+            const examDate = document.getElementById('new-subject-exam-date').value;
+
+            if (!name.trim() || !topics) { alert('Please enter subject name and number of topics'); return; }
+
+            const topicList = [];
+            for (let i = 1; i <= topics; i++) topicList.push({ name: `Topic ${i}`, completed: false });
+
+            subjectsData[name] = {
+                icon: '📖', color: 'var(--secondary-purple)', totalTopics: topics,
+                topics: topicList,
+                examName: examName || `${name} Exam`,
+                examDate: examDate ? new Date(examDate) : new Date(today.getTime() + 30 * 86400000)
+            };
+
+            closeModal('add-subject-modal');
+            showToast(`"${name}" added successfully!`);
+            updateDashboardProgress();
+            updateExamCountdown();
+
+            // Clear form
+            document.getElementById('new-subject-name').value = '';
+            document.getElementById('new-subject-topics').value = '';
+            document.getElementById('new-subject-exam').value = '';
+            document.getElementById('new-subject-exam-date').value = '';
+
+            // TODO: Uncomment when Django backend is ready
+            // fetch('/api/subjects/', { method:'POST', ... });
+        }
+
+        // ===============================
+        // MODALS
+        // ===============================
+        function openModal(id) { document.getElementById(id).style.display = 'flex'; }
+        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+
+        // ===============================
+        // PASSWORD TOGGLE
+        // ===============================
+        document.getElementById('toggle-pwd').onclick = function() {
+            const pw = document.getElementById('login-password');
+            if (pw.type === 'password') { pw.type = 'text'; this.innerText = '🙈'; }
+            else { pw.type = 'password'; this.innerText = '👁️'; }
+        };
+
+        // Close modals on overlay click
+        document.querySelectorAll('.modal-overlay').forEach(m => {
+            m.addEventListener('click', (e) => { if (e.target === m) m.style.display = 'none'; });
+        });
+
+    </script>
+</body>
+</html>

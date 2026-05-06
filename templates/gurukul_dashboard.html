@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gurukul AI - Ancient Learning Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=DM+Sans:wght@400;500;700&family=EB+Garamond:wght@400;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        background: '#0a0804',
+                        primary: '#c9963a',
+                        accent: '#e8732a',
+                        text: '#f0ddb0',
+                        success: '#2d7a4f',
+                        danger: '#c0392b'
+                    },
+                    fontFamily: {
+                        cinzel: ['Cinzel', 'serif'],
+                        garamond: ['EB Garamond', 'serif'],
+                        sans: ['DM Sans', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #0a0804;
+            color: #f0ddb0;
+            background-image: radial-gradient(circle at top right, rgba(201, 150, 58, 0.15) 0%, transparent 40%),
+                              radial-gradient(circle at bottom left, rgba(232, 115, 42, 0.1) 0%, transparent 50%);
+            background-attachment: fixed;
+        }
+        
+        .glass {
+            background: rgba(10, 8, 4, 0.4);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(201, 150, 58, 0.15);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        }
+        
+        .glass-hover:hover {
+            border-color: rgba(201, 150, 58, 0.4);
+            background: rgba(201, 150, 58, 0.05);
+            transform: translateY(-2px);
+            transition: all 0.4s ease;
+        }
+
+        .chart-bar flex-shrink-0:hover {
+            box-shadow: 0 0 15px rgba(232, 115, 42, 0.6);
+        }
+    </style>
+</head>
+<body class="font-sans antialiased min-h-screen flex selection:bg-primary/30 text-text overflow-x-hidden flex-col md:flex-row">
+    <!-- Mobile Topbar -->
+    <div class="md:hidden flex items-center justify-between p-4 glass sticky top-0 z-[60] shadow-md border-b border-primary/20 bg-[#0a0804]">
+        <h1 class="font-cinzel text-2xl font-bold text-primary tracking-widest drop-shadow-primary">GURUKUL</h1>
+        <button onclick="document.getElementById('mobile-menu').classList.toggle('-translate-x-full')" class="text-primary hover:text-white transition-colors">
+            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+        </button>
+    </div>
+
+
+    <!-- Sidebar -->
+        <aside id="mobile-menu" class="w-64 glass border-r border-t-0 border-b-0 border-l-0 flex flex-col fixed md:sticky top-0 left-0 h-screen z-[100] transform -translate-x-full md:translate-x-0 transition-transform duration-300 bg-[#0a0804] md:bg-transparent shadow-[4px_0_24px_rgba(0,0,0,0.8)] md:shadow-none">
+        <!-- Close Button (Mobile Only) -->
+        <button onclick="document.getElementById('mobile-menu').classList.add('-translate-x-full')" class="md:hidden absolute top-3 md:p-6 right-6 text-text/50 hover:text-danger z-50">
+            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+        </button>
+        <div class="p-4 md:p-8">
+            <h1 class="font-cinzel text-lg md:text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-accent tracking-widest drop-shadow-lg drop-shadow-primary">GURUKUL</h1>
+            <p class="font-garamond text-sm text-text/60 mt-1 uppercase tracking-widest">Ancient Wisdom</p>
+        </div>
+        
+        <nav class="flex-1 px-4 space-y-3 mt-4 font-sans text-sm tracking-wide">
+            <!-- Active State -->
+            <a href="gurukul_dashboard.html" class="flex items-center gap-3 px-4 py-3 rounded-lg bg-gradient-to-r from-primary/20 to-transparent border-l-2 border-primary text-primary transition-all font-bold">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path></svg>
+                Dashboard
+            </a>
+            <a href="gurukul_vishay.html" class="flex items-center gap-3 px-4 py-3 rounded-lg text-text/70 hover:text-primary hover:bg-primary/10 transition-all font-medium border-l-2 border-transparent hover:border-text/30">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>
+                Vishay <span class="ml-auto bg-text/10 px-2 py-0.5 rounded text-xs opacity-50">Subjects</span>
+            </a>
+            <a href="gurukul_pariksha.html" class="flex items-center gap-3 px-4 py-3 rounded-lg text-text/70 hover:text-primary hover:bg-primary/10 transition-all font-medium border-l-2 border-transparent hover:border-text/30">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                Pariksha <span class="ml-auto bg-text/10 px-2 py-0.5 rounded text-xs opacity-50">Exams</span>
+            </a>
+            <a href="gurukul_planner.html" class="flex items-center gap-3 px-4 py-3 rounded-lg text-text/70 hover:text-primary hover:bg-primary/10 transition-all font-medium border-l-2 border-transparent hover:border-text/30">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                Study Planner
+            </a>
+        </nav>
+        
+        <div class="p-3 md:p-6">
+            <a href="gurukul_ashram.html" class="flex items-center gap-3 px-4 py-3 rounded-lg text-text/70 hover:text-primary hover:bg-primary/10 transition-all font-medium border border-text/10">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                Ashram <span class="ml-auto text-xs opacity-50">Settings</span>
+            </a>
+        </div>
+    </aside>
+
+    <!-- Main Workspace -->
+    <main class="flex-1 px-4 md:px-8 py-6 md:py-8 overflow-y-auto overflow-x-hidden w-full">
+        
+        <!-- Top Nav / Greeting -->
+        <header class="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 mb-3 md:mb-6 md:mb-5 md:mb-10 pb-4 md:pb-6 border-b border-primary/20">
+            <div>
+                <h2 class="font-cinzel text-xl md:text-4xl text-text font-bold tracking-wide">Namaste, Shishya</h2>
+                <p class="font-garamond text-primary/80 text-xl mt-2 italic flex items-center gap-2">
+                    <span class="w-1.5 h-1.5 rounded-full bg-accent"></span>
+                    Vidyādhanam Sarvadhanapradhānam (Knowledge is the ultimate wealth)
+                </p>
+            </div>
+            <div class="flex items-center gap-2 md:gap-5 flex-wrap justify-end">
+                <button class="w-12 h-12 rounded-full glass flex items-center justify-center text-primary hover:text-accent border-primary/30 transition-all shadow-[0_0_15px_rgba(201,150,58,0.1)] relative">
+                    <span class="absolute top-0right-0 w-3 h-3 bg-danger rounded-full animate-pulse blur-[1px]"></span>
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
+                </button>
+                <div class="p-1 glass rounded-full border-primary/40">
+                    <img src="https://ui-avatars.com/api/?name=Shishya&background=1a140b&color=c9963a&bold=true&size=128" alt="Profile" class="w-12 h-12 rounded-full cursor-pointer hover:opacity-80 transition-opacity">
+                </div>
+            </div>
+        </header>
+
+        <!-- Dashboard Layout Grid -->
+        <div class="grid max-w-full grid-cols-1 lg:grid-cols-12 gap-4 md:p-8 max-w-7xl mx-auto">
+            
+            <!-- Left Panel (8 cols) -->
+            <div class="lg:col-span-8 flex flex-col gap-4 md:p-8">
+                
+                <!-- Adhyayan Pragati (Subject Progress) -->
+                <section class="glass max-w-full break-words glass-hover rounded-2xl p-4 md:p-8 relative overflow-hidden group">
+                    <div class="absolute -right-10 -top-10 opacity-5 blur-sm transition-opacity group-hover:opacity-10">
+                        <svg class="w-64 h-64 text-primary" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2L2 22h20L12 2zm0 3.84L17.41 19H6.59L12 5.84z"/></svg>
+                    </div>
+                    
+                    <div class="flex justify-between items-center mb-4 md:mb-8 relative z-10">
+                        <div>
+                            <h3 class="font-cinzel text-2xl text-primary font-bold">Adhyayan Pragati</h3>
+                            <p class="font-garamond text-text/60 italic">Core Vishay Progression</p>
+                        </div>
+                        <button class="bg-primary/10 hover:bg-primary border border-primary/30 hover:border-primary text-primary hover:text-black font-bold uppercase tracking-widest text-xs px-4 py-2 rounded transition-all">
+                            View All
+                        </button>
+                    </div>
+                    
+                    <div class="flex flex-col xl:flex-row gap-3 md:p-6 md:gap-5 md:gap-10 items-center relative z-10 w-full overflow-hidden">
+                        <!-- Progress Ring -->
+                        <div class="relative w-48 h-48 flex-shrink-0">
+                            <!-- SVG implementation for radial progress -->
+                            <svg class="w-full h-full -rotate-90 transform" viewBox="0 0 120 120">
+                                <circle cx="60" cy="60" r="54" fill="none" stroke="rgba(201,150,58,0.1)" stroke-width="8" />
+                                <circle cx="60" cy="60" r="54" fill="none" stroke="#e8732a" stroke-width="8" stroke-dasharray="339.29" stroke-dashoffset="118.75" stroke-linecap="round" class="drop-shadow-[0_0_8px_rgba(232,115,42,0.8)]" />
+                            </svg>
+                            <div class="absolute inset-0 flex flex-col items-center justify-center pt-2">
+                                <span class="text-xl md:text-4xl font-cinzel font-bold text-text mb-1 drop-shadow-md">65%</span>
+                                <span class="text-[10px] text-primary tracking-[0.2em] uppercase font-bold">Overall</span>
+                            </div>
+                        </div>
+
+                        <!-- Subject Bars -->
+                        <div class="w-full space-y-6">
+                            <!-- Subject 1 -->
+                            <div class="font-sans">
+                                <div class="flex justify-between text-sm mb-2 items-end">
+                                    <div class="flex items-center gap-2">
+                                        <span class="w-2 h-2 rounded-full bg-accent shadow-[0_0_5px_rgba(232,115,42,0.8)]"></span>
+                                        <span class="text-text font-medium tracking-wide">Historical Timeline</span>
+                                    </div>
+                                    <span class="text-accent font-bold">85%</span>
+                                </div>
+                                <div class="w-full bg-black/50 rounded-full h-2 border border-white/5 overflow-hidden">
+                                    <div class="bg-gradient-to-r from-accent to-[#ff8c42] h-full rounded-full w-[85%] relative">
+                                        <div class="absolute right-0 top-0 bottom-0 w-4 bg-white/30 rounded-full blur-[2px]"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Subject 2 -->
+                            <div class="font-sans">
+                                <div class="flex justify-between text-sm mb-2 items-end">
+                                    <div class="flex items-center gap-2">
+                                        <span class="w-2 h-2 rounded-full bg-success shadow-[0_0_5px_rgba(45,122,79,0.8)]"></span>
+                                        <span class="text-text font-medium tracking-wide">Vedic Mathematics</span>
+                                    </div>
+                                    <span class="text-success font-bold">45%</span>
+                                </div>
+                                <div class="w-full bg-black/50 rounded-full h-2 border border-white/5 overflow-hidden">
+                                    <div class="bg-gradient-to-r from-[#1d5234] to-success h-full rounded-full w-[45%]"></div>
+                                </div>
+                            </div>
+
+                            <!-- Subject 3 -->
+                            <div class="font-sans">
+                                <div class="flex justify-between text-sm mb-2 items-end">
+                                    <div class="flex items-center gap-2">
+                                        <span class="w-2 h-2 rounded-full bg-primary shadow-[0_0_5px_rgba(201,150,58,0.8)]"></span>
+                                        <span class="text-text font-medium tracking-wide">Syntax & Grammar</span>
+                                    </div>
+                                    <span class="text-primary font-bold">20%</span>
+                                </div>
+                                <div class="w-full bg-black/50 rounded-full h-2 border border-white/5 overflow-hidden">
+                                    <div class="bg-gradient-to-r from-[#8a6525] to-primary h-full rounded-full w-[20%]"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Saptah Chart (Weekly Analytics) -->
+                <section class="glass max-w-full break-words glass-hover rounded-2xl p-4 md:p-8">
+                    <div class="flex justify-between items-center mb-4 md:mb-8">
+                        <div>
+                            <h3 class="font-cinzel text-2xl text-primary font-bold">Saptah Chart</h3>
+                            <p class="font-garamond text-text/60 italic">Sadhana Analytics (Last 7 Days)</p>
+                        </div>
+                        <div class="flex items-center gap-2 bg-black/40 p-1 rounded-lg border border-primary/20">
+                            <button class="px-3 py-1 rounded bg-primary text-black text-xs font-bold shadow-md">Total Hours</button>
+                            <button class="px-3 py-1 rounded text-text/60 hover:text-text text-xs font-bold transition-colors">By Vishay</button>
+                        </div>
+                    </div>
+                    
+                    <div class="h-56 flex items-end overflow-x-auto scrollbar-hide pb-2 justify-between px-4 pb-6 border-b border-primary/10 relative font-sans">
+                        <!-- Horizontal Grid Lines -->
+                        <div class="absolute w-full border-t border-text/5 bottom-12 left-0 pointer-events-none"></div>
+                        <div class="absolute w-full border-t border-text/5 bottom-28 left-0 pointer-events-none"></div>
+                        <div class="absolute w-full border-t border-primary/10 bottom-44 left-0 pointer-events-none flex items-center justify-end"><span class="text-[10px] text-text/30 -mt-3 absolute -right-6">4h</span></div>
+                        
+                        <!-- Chart Bars -->
+                        <div class="w-10 md:w-14 flex-shrink-0 bg-gradient-to-t from-primary/10 to-primary/40 rounded-sm h-16 chart-bar flex-shrink-0 border-t border-primary/50 relative group cursor-pointer transition-all duration-300 hover:to-primary">
+                            <span class="absolute -top-4 md:p-8 left-1/2 -translate-x-1/2 bg-black/80 px-2 py-1 rounded text-xs opacity-0 group-hover:opacity-100 transition-opacity border border-primary/30 z-10 whitespace-nowrap">1h 15m</span>
+                        </div>
+                        <div class="w-10 md:w-14 flex-shrink-0 bg-gradient-to-t from-primary/10 to-primary/40 rounded-sm h-28 chart-bar flex-shrink-0 border-t border-primary/50 relative group cursor-pointer transition-all duration-300 hover:to-primary">
+                            <span class="absolute -top-4 md:p-8 left-1/2 -translate-x-1/2 bg-black/80 px-2 py-1 rounded text-xs opacity-0 group-hover:opacity-100 transition-opacity border border-primary/30 z-10 whitespace-nowrap">2h 30m</span>
+                        </div>
+                        <div class="w-10 md:w-14 flex-shrink-0 bg-gradient-to-t from-primary/10 to-primary/40 rounded-sm h-20 chart-bar flex-shrink-0 border-t border-primary/50 relative group cursor-pointer transition-all duration-300 hover:to-primary">
+                            <span class="absolute -top-4 md:p-8 left-1/2 -translate-x-1/2 bg-black/80 px-2 py-1 rounded text-xs opacity-0 group-hover:opacity-100 transition-opacity border border-primary/30 z-10 whitespace-nowrap">1h 45m</span>
+                        </div>
+                        <div class="w-10 md:w-14 flex-shrink-0 bg-gradient-to-t from-accent/20 to-accent rounded-sm h-40 chart-bar flex-shrink-0 border-t border-accent relative group cursor-pointer transition-all duration-300 shadow-[0_0_15px_rgba(232,115,42,0.4)]">
+                            <span class="absolute -top-4 md:p-8 left-1/2 -translate-x-1/2 bg-black/80 px-2 py-1 rounded text-xs text-accent font-bold opacity-100 border border-accent/30 z-10 whitespace-nowrap">3h 40m</span>
+                        </div>
+                        <div class="w-10 md:w-14 flex-shrink-0 glass rounded-sm h-6 chart-bar flex-shrink-0 border-t border-danger/50 relative group cursor-pointer transition-all duration-300">
+                            <span class="absolute -top-4 md:p-8 left-1/2 -translate-x-1/2 bg-black/80 px-2 py-1 rounded text-[10px] text-danger opacity-100 border border-danger/30 z-10 whitespace-nowrap">30m</span>
+                        </div>
+                        <div class="w-10 md:w-14 flex-shrink-0 bg-gradient-to-t from-primary/10 to-primary/40 rounded-sm h-32 chart-bar flex-shrink-0 border-t border-primary/50 relative group cursor-pointer transition-all duration-300 hover:to-primary">
+                            <span class="absolute -top-4 md:p-8 left-1/2 -translate-x-1/2 bg-black/80 px-2 py-1 rounded text-xs opacity-0 group-hover:opacity-100 transition-opacity border border-primary/30 z-10 whitespace-nowrap">3h 05m</span>
+                        </div>
+                        <div class="w-10 md:w-14 flex-shrink-0 bg-white/5 rounded-sm h-1 border-t border-white/10 relative"></div>
+                    </div>
+                    
+                    <div class="flex justify-between px-4 mt-3 text-sm text-text/50 font-bold uppercase tracking-widest">
+                        <span>Mon</span><span>Tue</span><span>Wed</span><span class="text-text">Thu</span><span class="text-danger shadow-danger">Fri</span><span>Sat</span><span>Sun</span>
+                    </div>
+                </section>
+                
+            </div>
+
+            <!-- Right Panel (4 cols) -->
+            <div class="lg:col-span-4 flex flex-col gap-4 md:p-8">
+                
+                <!-- Sadhana Streak / Pariksha Countdown Composite Widget -->
+                <div class="glass max-w-full break-words glass-hover rounded-2xl p-1 overflow-hidden">
+                    <div class="bg-black/40 rounded-xl p-3 md:p-6 border border-white/5">
+                        
+                        <!-- Streak -->
+                        <div class="flex items-center justify-between border-b border-primary/20 pb-6 mb-3 md:mb-6">
+                            <div>
+                                <h3 class="font-cinzel text-lg text-primary font-bold tracking-wide">Sadhana Streak</h3>
+                                <div class="flex items-end gap-2 mt-2">
+                                    <span class="font-sans text-5xl tracking-tighter text-accent font-bold drop-shadow-[0_0_10px_rgba(232,115,42,0.5)]">14</span>
+                                    <span class="text-sm pb-1 text-text/60">Days of Fire</span>
+                                </div>
+                            </div>
+                            <div class="w-16 h-16 rounded-full border-2 border-accent/40 flex items-center justify-center bg-accent/10 relative group">
+                                <span class="text-lg md:text-3xl filter saturate-150 animate-pulse">🔥</span>
+                                <div class="absolute inset-0 bg-gradient-to-tr from-transparent via-transparent to-white/20 rounded-full animate-[spin_4s_linear_infinite]"></div>
+                            </div>
+                        </div>
+
+                        <!-- Countdown -->
+                        <div>
+                            <h3 class="font-cinzel text-lg text-primary font-bold tracking-wide mb-4">Pariksha Countdown</h3>
+                            <div class="bg-gradient-to-b from-[#1a100a] to-[#0a0502] rounded-lg p-5 border border-danger/30 relative">
+                                <div class="absolute right-0 top-0 bottom-0 w-1 bg-danger/80 rounded-r-lg shadow-[0_0_12px_#c0392b]"></div>
+                                <span class="text-xs text-danger uppercase tracking-widest font-bold font-sans">Next Exam</span>
+                                <div class="flex items-baseline justify-between mt-1">
+                                    <span class="text-text font-garamond text-xl">UPSC Mock V2</span>
+                                    <div class="text-right">
+                                        <span class="text-xl md:text-4xl font-sans font-bold text-danger leading-none">24</span>
+                                        <span class="text-xs block tracking-widest text-text/50">DAYS</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+                <!-- Aaj Ka Adhyayan (Today's Plan) -->
+                <section class="glass max-w-full break-words glass-hover rounded-2xl p-3 md:p-6 flex-1 flex flex-col">
+                    <div class="flex items-center justify-between mb-3 md:mb-6">
+                        <h3 class="font-cinzel text-xl text-primary font-bold">Aaj Ka Adhyayan</h3>
+                        <span class="bg-primary/20 text-primary px-2 rounded font-sans text-xs border border-primary/20 py-0.5">3 Pending</span>
+                    </div>
+
+                    <div class="space-y-4 flex-1 font-sans" id="aaj-ka-adhyayan-list">
+                        <!-- Populated by JS -->
+                    </div>
+
+                    <!-- AI Insights -->
+                    <div class="mt-6 pt-4 border-t border-primary/20">
+                        <div class="flex gap-3 bg-[#110e08] p-4 rounded-xl border border-accent/20">
+                            <span class="text-xl">🤖</span>
+                            <div>
+                                <span class="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent text-xs font-bold uppercase tracking-widest shadow-none">AI Insight</span>
+                                <p class="text-sm font-garamond italic text-text/80 mt-1 leading-snug">"Shishya, your memory retention peaks in 2 hours. Schedule difficult Vishay then."</p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+                
+            </div>
+
+        </div>
+    </main>
+
+    <script src='/static/js/gurukul_api.js'></script> 
+    <!-- DRF API Integration Engine -->
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            const token = getToken();
+            if(!token) { window.location.href = 'gurukul_ashram.html'; return; }
+            
+            await loadDashboardCore();
+            await loadSaptahChart();
+            await loadSubjectProgress();
+            
+            setInterval(loadDashboardCore, 60000);
+        });
+
+        document.addEventListener('click', async function(e) {
+            const link = e.target.closest('a');
+            if (link && link.getAttribute('href') && link.getAttribute('href') !== '#') {
+                e.preventDefault();
+                window.location.href = link.getAttribute('href');
+                return;
+            }
+
+            const btn = e.target.closest('button');
+            if (!btn) return;
+            
+            const btnText = btn.innerText.trim().toUpperCase();
+
+            if (btnText === 'VIEW ALL') {
+                window.location.href = "gurukul_vishay.html";
+                return;
+            }
+
+            if (btnText === 'TOTAL HOURS') {
+                const parent = btn.parentElement;
+                parent.children[0].className = "px-3 py-1 rounded bg-primary text-black text-xs font-bold shadow-md";
+                parent.children[1].className = "px-3 py-1 rounded text-text/60 hover:text-text text-xs font-bold transition-colors";
+                try { await loadSaptahChart(); } catch(e){}
+                return;
+            }
+
+            if (btnText === 'BY VISHAY') {
+                const parent = btn.parentElement;
+                parent.children[1].className = "px-3 py-1 rounded bg-primary text-black text-xs font-bold shadow-md";
+                parent.children[0].className = "px-3 py-1 rounded text-text/60 hover:text-text text-xs font-bold transition-colors";
+                return;
+            }
+
+            if (btn.classList.contains('finish-task-btn')) {
+                const sessionId = btn.getAttribute('data-session-id');
+                btn.innerText = "UPDATING...";
+                try {
+                    const res = await gurukulFetch(`http://127.0.0.1:8000/api/study-sessions/${sessionId}/`, {
+                        method: 'PATCH',
+                        body: JSON.stringify({ is_completed: true, end_time: new Date().toISOString() })
+                    });
+                    if(res.ok) {
+                        await loadDashboardCore();
+                    } else {
+                        btn.innerText = "ERROR";
+                    }
+                } catch(err) { console.error(err); }
+                return;
+            }
+        });
+
+        async function loadDashboardCore() {
+            try {
+                const res = await gurukulFetch('http://127.0.0.1:8000/api/dashboard/');
+                if(!res.ok) return;
+                const data = await res.json();
+                
+                document.querySelector('h2.tracking-wide').innerText = data.namaste;
+                
+                const streakEl = document.querySelector('.tracking-tighter.text-accent');
+                if(streakEl) streakEl.innerText = data.sadhana_streak || 0;
+                
+                if(data.upcoming_exams && data.upcoming_exams.length > 0) {
+                    const next = data.upcoming_exams[0];
+                    document.querySelectorAll('.font-garamond.text-xl')[1].innerText = next.name;
+                    document.querySelector('.text-xl md:text-4xl.text-danger').innerText = next.countdown_days;
+                } else {
+                    document.querySelectorAll('.font-garamond.text-xl')[1].innerText = 'No Active Exams';
+                    document.querySelector('.text-xl md:text-4xl.text-danger').innerText = '--';
+                }
+
+                renderTaskInteractions(data.today_sessions);
+            } catch(e) { }
+        }
+
+        function renderTaskInteractions(sessions) {
+            if(!sessions) return;
+            const listDiv = document.getElementById('aaj-ka-adhyayan-list');
+            let html = '';
+            let pending = 0;
+
+            sessions.forEach(sess => {
+                if(sess.is_completed) {
+                    html += `<div class="flex gap-4 items-start p-3 bg-black/30 rounded-lg border border-success/30 opacity-60"><div class="w-6 h-6 mt-0.5 rounded-full bg-success flex items-center justify-center text-black">✓</div><div><h4 class="text-text font-medium line-through">${sess.subject_name}</h4><p class="text-xs text-text/50">Completed • ${sess.duration_minutes} Mins</p></div></div>`;
+                } else {
+                    pending++;
+                    html += `<div class="flex gap-4 items-start p-4 bg-gradient-to-br from-primary/10 to-transparent rounded-lg border border-primary relative overflow-hidden"><button data-session-id="${sess.id}" class="finish-task-btn absolute right-4 top-4 bg-primary/20 hover:bg-primary text-primary hover:text-black transition-colors rounded px-3 py-1 text-xs font-bold uppercase border border-primary/40 z-10">Finish Task</button><div class="absolute left-0 top-0 bottom-0 w-1 bg-primary"></div><div class="w-6 h-6 mt-0.5 rounded-full border-2 border-primary ring-4 ring-primary/20 bg-background flex items-center justify-center"><div class="w-2 h-2 rounded-full bg-primary animate-pulse"></div></div><div class="flex-1"><h4 class="text-text font-bold text-lg pr-24">${sess.subject_name}</h4><p class="text-xs text-primary mt-1 mb-2 font-bold tracking-wider">Estimated: ${sess.duration_minutes} Mins</p></div></div>`;
+                }
+            });
+            listDiv.innerHTML = html || '<p class="text-text/50 text-sm mt-2">No scheduled tasks today.</p>';
+            document.querySelector('.bg-primary\\/20.text-primary.px-2.rounded').innerText = `${pending} Pending`;
+        }
+
+        async function loadSaptahChart() {
+            try {
+                const res = await gurukulFetch('http://127.0.0.1:8000/api/study-sessions/weekly-stats/');
+                if(!res.ok) return;
+                const data = await res.json();
+                
+                const chartContainer = document.querySelector('.h-56.flex.items-end');
+                if(!chartContainer || data.length === 0) return;
+
+                const gridLines = chartContainer.innerHTML.match(/<div class="absolute w-full[^>]+><\/div>|<div class="absolute w-full[^>]+>.*?<\/div>/g) || [];
+                let chartHtml = gridLines.join('');
+
+                const maxMinutes = Math.max(...data.map(d => d.total_minutes), 120); 
+
+                data.forEach(stat => {
+                    const heightPercent = Math.min((stat.total_minutes / maxMinutes) * 100, 100);
+                    chartHtml += `
+                    <div class="w-10 md:w-14 flex-shrink-0 bg-gradient-to-t from-primary/10 to-primary/40 rounded-sm chart-bar flex-shrink-0 border-t border-primary/50 relative group transition-all duration-300 hover:to-primary" 
+                         style="height: ${heightPercent}%">
+                        <span class="absolute -top-4 md:p-8 left-1/2 -translate-x-1/2 bg-black/80 px-2 py-1 rounded text-xs opacity-0 group-hover:opacity-100 transition-opacity border border-primary/30 z-10 whitespace-nowrap">
+                            ${Math.floor(stat.total_minutes/60)}h ${stat.total_minutes%60}m
+                        </span>
+                    </div>`;
+                });
+                chartContainer.innerHTML = chartHtml;
+            } catch(e) { }
+        }
+
+        async function loadSubjectProgress() {
+            try {
+                const res = await gurukulFetch('http://127.0.0.1:8000/api/subjects/progress/');
+                if(!res.ok) return;
+                const data = await res.json();
+                
+                const barsContainer = document.querySelector('.w-full.space-y-6');
+                if(!barsContainer || data.length === 0) return;
+
+                let html = '';
+                let totalProg = 0;
+                const colors = ['bg-accent', 'bg-success', 'bg-primary'];
+                const grads = ['from-[#1a100a] to-accent', 'from-[#1d5234] to-success', 'from-[#8a6525] to-primary'];
+
+                data.slice(0, 3).forEach((sub, i) => {
+                    totalProg += sub.progress_percentage || 0;
+                    html += `
+                    <div class="font-sans">
+                        <div class="flex justify-between text-sm mb-2 items-end">
+                            <div class="flex items-center gap-2">
+                                <span class="w-2 h-2 rounded-full ${colors[i%3]} shadow-md"></span>
+                                <span class="text-text font-medium tracking-wide">${sub.name}</span>
+                            </div>
+                            <span class="font-bold text-text">${sub.progress_percentage}%</span>
+                        </div>
+                        <div class="w-full bg-black/50 rounded-full h-2 border border-white/5 overflow-hidden">
+                            <div class="bg-gradient-to-r ${grads[i%3]} h-full rounded-full transition-all duration-700" style="width: ${sub.progress_percentage}%"></div>
+                        </div>
+                    </div>`;
+                });
+                
+                barsContainer.innerHTML = html;
+                const avgProg = Math.round(totalProg / Math.min(3, data.length));
+                document.querySelector('.text-xl md:text-4xl.font-cinzel.font-bold').innerText = `${avgProg}%`;
+                
+                const ring = document.querySelector('circle.drop-shadow-\\[0_0_8px_rgba\\(232\\,115\\,42\\,0\\.8\\)\\]');
+                if(ring) ring.style.strokeDashoffset = 339.29 - (339.29 * (avgProg / 100));
+            } catch(e) {}
+        }
+    </script>
+</body>
+</html>
