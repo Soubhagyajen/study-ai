@@ -21,9 +21,13 @@ else:
             'USER': os.environ.get('DB_USER', 'postgres.jkbagjkfdegfyawaincq'),
             'PASSWORD': os.environ.get('DB_PASSWORD', ''),
             'HOST': os.environ.get('DB_HOST', 'aws-0-ap-southeast-1.pooler.supabase.com'),
-            'PORT': os.environ.get('DB_PORT', '6543'),
+            'PORT': os.environ.get('DB_PORT', '5432'),
         }
     }
+
+# Disable prepared statements for Supavisor transaction mode compatibility
+DATABASES['default']['DISABLE_SERVER_SIDE_CURSORS'] = True
+DATABASES['default'].setdefault('OPTIONS', {})['options'] = '-c statement_timeout=60000'
 
 # Add Whitenoise middleware directly after SecurityMiddleware
 MIDDLEWARE.insert(1, 'whitenoise.middleware.WhiteNoiseMiddleware')
